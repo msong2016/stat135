@@ -1,0 +1,556 @@
+---
+title: "hw10_r"
+author: "Julie Song"
+date: "11/13/2018"
+output: html_document
+---
+```{r}
+library(ggplot2)
+library(dplyr)
+```
+
+#10A
+##a) 
+
+```{r}
+chicks <- read.table('chicks.txt', header = TRUE)
+```
+
+#### Standard regression model in terms of two variables: 
+$$\ (Chick Weight)_i = a + b * (Egg Length)_i + e_i $$
+* (Chick Weight)i represents chick weight of ith chick  
+* a represents intercept of regression  
+* b represents slope of regression  
+* (Egg Length)i represents egg length of ith chick  
+* ei represents error term  
+
+```{r}
+ggplot(data = chicks, aes(x = el, y = cw)) + geom_point() + labs(x = 'Egg Length (el)', y = 'Chick Weight (cw)') 
+```
+
+##### The scatterplot is roughly football shaped, which suggests that the data seem to be homoscedastic, so it is reasonable to assume the assumptions of homoscedasticity, which states that var(e_i) is constant and var(e_i) does not depend on variable x, which is egg length in this case. Thus, the assumptions of the model seem to be reasonable. 
+
+```{r}
+mean(chicks$cw) #mean of chick weight (Y) 
+mean(chicks$el) #mean of egg length (X)
+sd(chicks$cw) #sd of chick weight (Y)
+sd(chicks$el) #sd of egg length (X)
+cov(chicks$cw, chicks$el) / (sd(chicks$cw) * sd(chicks$el)) #correlation between chick weight and egg length
+
+#Find slope and intercept of regression line: 
+b <- cov(chicks$cw, chicks$el)/var(chicks$el) #slope, units: gm / mm
+a <- mean(chicks$cw) - mean(chicks$el)*b #intercept, units: gm
+paste("Chick Weight (gm) =", b, "(gm / mm)" , "* Egg Length (mm)", a, "(gm)" )
+```
+
+
+##b) 
+
+```{r}
+reg <- lm(cw ~ el, data = chicks) #a = -1.7702, b = 0.2522 which is very close to what I got in part a)
+
+summary(reg) 
+```
+
+#### Hypothesis testing for intercept for t-test: 
+
+* H0: a = 0  
+* H1: a != 0  
+
+##### t-statistic: -1.329 with p-value of 0.191; since p-value of 0.191 is greater than significance level of 0.05, we fail to reject the null and conclude that we don't have enough evidence to say that intercept, represented by a, is not equal to 0. 
+
+#### Hypothesis testing for slope for t-test: 
+
+* H0: b = 0  
+* H1: b != 0  
+
+##### t-statistic: 5.947 with p-value of 4.73e-07; since p-value is extremely small compared to significance level of 0.05, we reject the null and conclude that it is likely for slope to not equal to zero. 
+
+#### Hypothesis testing for F-test: 
+
+* H0: b = 0  
+* H1: b != 0  
+
+##### F-statistic: 35.37, with p-value of 4.727e-07; since p-value is extremely small compared to significance level of 0.05, we reject the null and conclude that it is likely for slope to not equal to zero. 
+
+
+##c) 
+
+```{r}
+#correlation between chick weight and egg length
+cov(chicks$cw, chicks$el) / (sd(chicks$cw) * sd(chicks$el)) # r = 0.6761419
+
+#correlation between chick weight and egg breadth
+cov(chicks$cw, chicks$eb) / (sd(chicks$cw) * sd(chicks$eb)) # r = 0.7336866
+
+#correlation between chick weight and egg weight
+cov(chicks$cw, chicks$ew) / (sd(chicks$cw) * sd(chicks$ew)) # r = 0.8472275
+
+#Of the three variables, egg weight is most highly correlated with chick weight
+
+
+# Scatter Diagram with Regression Line of Chick Weight versus Egg Weight
+ggplot(data = chicks, aes(x = ew, y = cw)) + geom_point() + geom_smooth(method=lm,se=FALSE) + labs(title = 'Scatter Diagram with Regression Line of Chick Weight versus Egg Weight', x = 'Egg Weight in gm', y = 'Chick Weight in gm')
+
+# Residual plot of chick weight versus egg weight
+reg <- lm(cw ~ ew, data = chicks)
+
+ggplot(data = reg) + geom_point(aes(x=.fitted,y=.resid)) + labs(title = 'Residual Plot of Chick Weight versus Egg Weight') + geom_hline(aes(yintercept = 0), col = 2)
+```
+
+##### There seems to be some sign of heteroskedasticity because variance does not seem to be constant. Starting from the left side and moving towards the right side of the residual plot, the variance of residuals seem to increase and does not seem to be constant. However, if we just look at the middle part of the residual plot, variances look pretty constant; so this can be quite subjective in determining whether this residual plot demonstrates heteroskedasticity or homoskedadasticity. Maybe if we do more random sampling for smaller and larger egg weights in tails, we might see more homoskedasitic patterns where variances of residuals are a lot larger than it is now, but in general, so this residual plot might not be too heteroskedastic. 
+
+
+##d) 
+
+```{r}
+#CI = estimated mean weight +/- t(alpha/2) * se
+
+n <- length(chicks$cw)
+
+# Estimated mean weight using information from above in part c), 
+paste("Chick Weight =", 0.71852 , "* (Egg Weight)", -0.05827 )
+
+est_mean <- 0.71852 * 8.5 - 0.05827 #estimated mean chick weight with egg weight of 8.5 grams
+
+#t-value with degrees of freedom of n -2: 
+t <- qt(0.05 / 2, df = n - 2)
+
+#SE for confidence interval: 
+se_ci <- (0.2207) * sqrt( (1/n) + ((8.5 - mean(chicks$ew))^2) / ((n-1) * var(chicks$ew)) ) 
+
+#confidence interval when egg weight is 8.5 grams: 
+c(est_mean + t * se_ci, est_mean - t * se_ci) 
+```
+
+
+##e) 
+```{r}
+#SE for prediction interval: 
+se_pi <- (0.2207) * sqrt( 1 + (1/n) + ((8.5 - mean(chicks$ew))^2) / ((n-1) * var(chicks$ew)) ) 
+
+#prediction interval when egg weight is 8.5 grams: 
+c(est_mean + t * se_pi, est_mean - t * se_pi) 
+```
+
+```{r}
+#confidence interval when egg weight is 12 grams: 
+
+se_ci <- (0.2207) * sqrt( (1/n) + ((12 - mean(chicks$ew))^2) / ((n-1) * var(chicks$ew)) )
+
+c(est_mean + t * se_ci, est_mean - t * se_ci) #confidence interval
+
+#prediction interval when egg weight is 12 grams: 
+
+se_pi <- (0.2207) * sqrt( 1 + (1/n) + ((12 - mean(chicks$ew))^2) / ((n-1) * var(chicks$ew)) )
+
+c(est_mean + t * se_pi, est_mean - t * se_pi) #Prediction interval
+```
+
+#================================
+
+#10B
+##a) 
+
+```{r}
+#regress weights of chicks on lengths and breadths of eggs
+summary(lm(cw ~ el + eb, data = chicks)) #R-squared: 0.7112, Adjusted r-squared: 0.6972
+
+#regress weights of chicks on egg weight: 
+summary(lm(cw ~ ew, data = chicks)) #R-squared = 0.7178, Adjusted r-squared: 0.7111
+```
+
+##### R-squared from regressing chicks weight on egg lengths and egg breadths compared to r-squared from regressing chicks weight on egg weight are extremely close; so one is not noticeably better than the other. 
+
+
+##b) 
+
+```{r}
+#regress egg weight on egg length and egg breadth: 
+summary(lm(ew ~ el + eb, data = chicks)) #R-squared = 0.9506
+```
+
+##### R-squared is a measure of the fit of linear model. Comparing r-squared resulting from regressing egg weight on egg length and egg breadth to r-squared resulting from regressing chick weight to on egg length and egg breadth shows that linear regression model when regressing egg weight on egg length and egg breadth is a better fit cmpared to that when regressing chick weight on egg length and egg breadth since it has larger r-squared value. (0.9506 > 9.7112)
+
+
+##c) 
+
+```{r}
+#regress chicks weight on egg length, egg breadth, and egg weight
+summary(lm(cw ~ el + eb + ew, data = chicks)) #R-squared: 0.724, Adjusted r-squared: 0.7033
+```
+
+#### F-test: 
+
+*H0: all slopes = 0  
+*H1: not all slopes = 0  
+
+##### this regression gives F-statistic of 34.98 with p-value of 2.903e-11, which is smaller than significance level alpha = 0.05, so we would reject the null and conclude that it is likely that not all slopes are equal to zero. 
+
+#### t-test (each individual t-test for intercept and 3 slopes): 
+
+*H0: slope for predictor variable el = 0  
+*H1: slope for predictor variable el != 0  
+
+##### p-value = 0.426, which is larger than significance level alpha = 0.05, so we fail to reject the null and conclude that we don't have enough evidence to say that slope for egg length is zero. 
+
+*H0: slope for predictor variable eb = 0  
+*H1: slope for predictor variable eb != 0  
+
+##### p-value = 0.351, which is larger than significance level alpha = 0.05, so we fail to reject the null and conclude that we don't have enough evidence to say that slope for egg breadth is zero. 
+
+*H0: slope for predictor variable ew = 0  
+*H1: slope for predictor variable ew != 0  
+
+##### p-value = 0.181, which is larger than significance level alpha = 0.05, so we fail to reject the null and conclude that we don't have enough evidence to say that slope for egg weight is zero.   
+
+##### None of the p-values resulting from these three t-tests are small enough to reject the null. This is different result compared to F-test which concludes that it is likely that not all slopes are equal to zero. There's this difference because when variables are highly correlated, t-test on individual slopes won't be significant. In this case, due to multicoliniarity, F test will be significant and not all slopes would be equal to zero but for t-test, weights can be given differently and result insignificant if variables are highly correlated.  
+
+##### R-squared value increases as we add more variables, regardless of whether those variables are highly correlated with each other. Just looking at r-squared, it is true that this regression (0.724 is higher than those in part a: 0.7112 and 0.7178). So, we have to examine adjusted r-squared. Adjusted r-squared for this regression is 0.7033, and adjusted r-squared for regressions in part a are 0.6972 (regressing chicks weight on egg lengths and egg breadths) and 0.7111 (regressing chicks weight on egg weight). This regression doesn't have significantly high adjusted r-squared compared to the other two to be impressed. Also, adjusted r-squared for this regression is actually lower than that for regressing on egg weight. So, this regression is not as impressive as either of the two in part a.  
+
+
+##d) 
+```{r, eval = FALSE}
+#regressions on chick weight with one predictor variable: 
+summary(lm(cw ~ el, data = chicks)) #r-squared: 0.4572, adjusted r-squared: 0.4442
+summary(lm(cw ~ eb, data = chicks)) #r-squared: 0.5383, adjusted r-squared: 0.5273 
+summary(lm(cw ~ ew, data = chicks)) #r-squared: 0.7178, adjusted r-squared: 0.7111  ***
+qqnorm(lm(cw ~ ew, data = chicks)$residuals)
+
+#regressions on chick weight with two predictor variables: 
+summary(lm(cw ~ el + eb, data = chicks)) #r-squared: 0.7112, adjusted r-squared: 0.6972 
+summary(lm(cw ~ el + ew, data = chicks)) #r-squared: 0.7179, adjusted r-squared: 0.7041
+summary(lm(cw ~ eb + ew, data = chicks)) #r-squared: 0.7196, adjusted r-squared:  0.7059 
+
+#regressions on chick weight with three predictor variables: 
+summary(lm(cw ~ el + eb + ew, data = chicks)) #r-squared: 0.724, adjusted r-squared: 0.7033
+```
+
+##### looking at adjusted r-squared, it seems like there are three regressions that seem to be relatively better than others because they have high adjusted r-squared compared to others. Also, simpler regressions (ones with less predictor variables) are often better than those that are not simple. Taking all of this infomation to consideration, I think regressing chick weight on egg weight (adjusted r-squared: 0.7111) is the best, as it has highest adjusted r-squared, and looking at qqplot, it follows normality assumption as well and it also doesn't have too many predictor variables, so I would choose this one as the best one. 
+
+#================================
+
+#10C
+##a) 
+
+### Parametric: Paired One-sided t-test
+```{r}
+tox <- read.table('tox.txt', header = TRUE) 
+```
+
+*H0: There is no difference before and after treatment: mean score before treatment - mean score after treatment = 0  
+*H1: The treatment is toxic in the short term; mean score before treatment - mean score after treatment > 0  
+
+##### This is a paired t-test because scores before and after treatment are dependent to each other. The score before the treatment could affect how high or how low the score can be after treatment. 
+
+```{r}
+qqnorm(tox[,4]) #meets normality assumption for scores before treatment
+qqnorm(tox[,5]) #meets normality assumption for scores after treatment
+
+n <- length(diff)
+
+diff <- tox[,4] - tox[,5]
+diff_sd <- sqrt((n-1)/n)*sd(diff)
+t <- (mean(diff))/(diff_sd/sqrt(n))
+p <- 1 - pt(abs(t),df=n-1) 
+p 
+```
+
+##### We have small p-value of 3.014008e-06, which is less than significance level alpha = 0.05, so we reject the null and conclude that it seems likely that paetients long got worse after 15 months after treatment. This conclusion is same as conclusion reached above using paraemtric test. 
+
+### Non-Parametric: Wilcox Rank Sum Test
+
+* H0: There is no difference before and after treatment: mean score before treatment - mean score after treatment = 0  
+* H1: The treatment is toxic in the short term; mean score before treatment - mean score after treatment > 0  
+
+```{r}
+wilcox.test(tox[,4], tox[,5], alternative = 'greater', paired = TRUE) #p-value = 4.53e-06
+```
+
+##### We have small p-value, which is less than significance level alpha = 0.05, so we reject the null and conclude that it seems likely that paetients long got worse after 15 months after treatment. This conclusion is same as conclusion reached above using paraemtric test. 
+
+
+## b)
+
+```{r, eval = FALSE}
+#regressions on month15 with one predictor variable: 
+summary(lm(month15 ~ height, data = tox)) #r-squared: 0.1525, adjusted r-squared: 0.1101
+summary(lm(month15 ~ rad, data = tox)) #r-squared: 0.00165, adjusted r-squared: -0.04827
+summary(lm(month15 ~ chemo, data = tox)) #r-squared: 0.1987, adjusted r-squared: 0.1587
+summary(lm(month15 ~ base, data = tox)) #r-squared: 0.3151, adjusted r-squared: 0.2809
+
+#regressions on month15 with two predictor variables:
+summary(lm(month15 ~ height + rad, data = tox)) #r-squared: 0.1807, adjusted r-squared: 0.09443
+summary(lm(month15 ~ height + chemo, data = tox)) #r-squared: 0.2254, adjusted r-squared: 0.1439
+summary(lm(month15 ~ height + base, data = tox)) #r-squared: 0.3571, adjusted r-squared: 0.2895
+summary(lm(month15 ~ rad + chemo, data = tox)) #r-squared: 0.2005, adjusted r-squared: 0.1164
+summary(lm(month15 ~ rad + base, data = tox)) #r-squared: 0.3153, adjusted r-squared: 0.2432
+summary(lm(month15 ~ chemo + base, data = tox)) #r-squared: 0.4846, adjusted r-squared: 0.4304 ***
+
+#regressions on month15 with three predictor variables:
+summary(lm(month15 ~ height + rad + chemo, data = tox)) #r-squared: 0.2377, adjusted r-squared: 0.1106
+summary(lm(month15 ~ height + rad + base, data = tox)) #r-squared: 0.3615, adjusted r-squared: 0.255
+summary(lm(month15 ~ height + chemo + base, data = tox)) #r-squared: 0.4871, adjusted r-squared: 0.4016
+summary(lm(month15 ~ rad + chemo + base, data = tox)) #r-squared: 0.4847, adjusted r-squared: 0.3988
+
+#regressions on month15 with four predictor variables:
+summary(lm(month15 ~ height + rad + chemo + base, data = tox)) #r-squared: 0.4883, adjusted r-squared: 0.3679
+```
+
+##### looking at r-squared value, it seems like regressing month15 on chemo and base should be used to predict because it has highest adjusted r-squared value (0.4304) and this regression seem to best fit the data out of all regressions above.
+
+```{r}
+qqnorm(lm(month15 ~ chemo + base, data = tox)$residuals) 
+```
+
+##### This qqplot looks roughly normal, so it's okay to say that normality assumption is met. 
+
+```{r}
+ggplot(data = lm(month15 ~ chemo + base, data = tox)) + geom_point(aes(x=.fitted,y=.resid)) + labs(title = 'Residual Plot of month15 on base and chemo', x = 'base and chemo', y = 'month15') + geom_hline(aes(yintercept = 0), col = 2) 
+```
+
+##### residual plot looks okay and variances of residuals look roughly similar. 
+
+#================================
+
+#10D
+##a) 
+
+```{r}
+baby <- read.table('baby.txt', header = TRUE)
+
+ggplot(data = baby, aes(x = bw)) + geom_histogram() + labs(title = 'Histogram of Babies Birthweight', x = 'Birthweight (Ounce)') 
+```
+
+##### Histogram of babies birthweights look approximately normal, as it looks roughly like a normal distribution. 
+
+```{r}
+qqnorm(baby[,1])
+```
+
+##### As seen by normal qq plot above, data for babies birthweight seem to approximately follow normal distribution, as points on qqplots line up approximately on a striaght diagonal line. 
+
+##b) 
+
+```{r}
+ggplot(data = baby, aes(x = mpw)) + geom_histogram() + labs(title = 'Histogram of Mothers Pregnancy Weight', x = 'Mothers Pregnancy Weight (lbs)') 
+```
+
+##### The histogram for mothers pregnancy weight seems to be right-skewed, as we can observe long right tail, so it seems like the data for mothers pregnancy weight doesn't follow normal distribution. 
+
+```{r}
+qqnorm(baby[,5])
+```
+
+##### The qqplot for mothers pregnancy weight data doesn't quite closely follow the normal curve line (diagonal straight line) as it deivates and has a bent or bowed shape on the right side, suggesting that this data perhaps is right-skewed, having a right tail. This qqplot would've had bent or bowed shape on the left side if the skewness were in the other direction towards left. 
+
+##c) 
+
+```{r, eval = FALSE}
+#regressions on bw with one predictor variable:
+summary(lm(bw ~ gd, data = baby)) #r-squared: 0.1661, adjusted r-squared: 0.1654
+summary(lm(bw ~ ma, data = baby)) #r-squared: 0.0007281, adjusted r-squared: -0.0001245
+summary(lm(bw ~ mh, data = baby)) #r-squared: 0.0415, adjusted r-squared: 0.04068
+summary(lm(bw ~ mpw, data = baby)) #r-squared: 0.02431, adjusted r-squared: 0.02348
+summary(lm(bw ~ sm, data = baby)) #r-squared: 0.06091, adjusted r-squared: 0.06011
+
+#regressions on bw with two predictor variables:
+summary(lm(bw ~ gd + ma, data = baby)) #r-squared: 0.1685, adjusted r-squared: 0.1671
+summary(lm(bw ~ gd + mh, data = baby)) #r-squared: 0.1969, adjusted r-squared: 0.1955
+summary(lm(bw ~ gd + mpw, data = baby)) #r-squared: 0.1875, adjusted r-squared: 0.1861
+summary(lm(bw ~ gd + sm, data = baby)) #r-squared: 0.2157, adjusted r-squared: 0.2143
+summary(lm(bw ~ ma + mh, data = baby)) #r-squared: 0.0423, adjusted r-squared: 0.04066
+summary(lm(bw ~ ma + mpw, data = baby)) #r-squared: 0.02433, adjusted r-squared: 0.02266
+summary(lm(bw ~ ma + sm,  data = baby)) #r-squared: 0.06102, adjusted r-squared: 0.05941
+summary(lm(bw ~ mh + mpw, data = baby)) #r-squared: 0.04708, adjusted r-squared: 0.04545
+summary(lm(bw ~ mh + sm, data = baby)) #r-squared: 0.1042, adjusted r-squared: 0.1027
+summary(lm(bw ~ mpw + sm, data = baby)) #r-squared: 0.08088, adjusted r-squared: 0.07931
+
+#regressions on bw with three predictor variables:
+summary(lm(bw ~ gd + ma + mh, data = baby)) #r-squared: 0.1993, adjusted r-squared: 0.1972
+summary(lm(bw ~ gd + ma + mpw, data = baby)) #r-squared: 0.1882, adjusted r-squared: 0.1862
+summary(lm(bw ~ gd + ma + sm, data = baby)) #r-squared: 0.2168, adjusted r-squared: 0.2147
+summary(lm(bw ~ gd + mh + mpw, data = baby)) #r-squared: 0.2029, adjusted r-squared: 0.2009
+summary(lm(bw ~ gd + mh + sm, data = baby)) #r-squared: 0.2482, adjusted r-squared: 0.2463  ***
+summary(lm(bw ~ gd + mpw + sm, data = baby)) #r-squared: 0.2335, adjusted r-squared: 0.2315
+summary(lm(bw ~ ma + mh + mpw, data = baby)) #r-squared: 0.04733, adjusted r-squared: 0.04489
+summary(lm(bw ~ ma + mh + sm, data = baby)) #r-squared: 0.1043, adjusted r-squared: 0.102
+summary(lm(bw ~ ma + mpw + sm, data = baby)) #r-squared: 0.08098, adjusted r-squared: 0.07862
+summary(lm(bw ~ mh + mpw + sm, data = baby)) #r-squared: 0.1073, adjusted r-squared: 0.105
+
+#regressions on bw with four predictor variables:
+summary(lm(bw ~ gd + ma + mh + sm, data = baby)) #r-squared: 0.2493, adjusted r-squared: 0.2467  ***
+```
+
+##### Among all the regressions with different predictor variables, adjusted r-squared value for regresing birth weight on gestion days, mothers height, and indicator of whether mother smoked or not during her prgenancy has one of the highest adjusted r-squared value of 0.2463. Also, regressing birth weight on all the other predictor variables also has one of the highest adjusted r-squared value of 0.2467. Among these two, I would use the first regression with adjsted r-squared value of 0.2463 because it has similar r-squared value with the one regressed on all other variables, but has one less predictor. Since simpler regressions (one with less predictor variables) are often better than those that are not simple, the subset of varaibles that should be used as predictors for birthweight are: gd (gestion days), mh (mothers height), and sm (indicator of whether mother smoked or not during her pregnancy). 
+
+
+##d) 
+##### Using regression with subset of variables chosen in c), coefficient of the indicator variable 'sm' is -8.52262. This means that given that other variables are constant, if mother smokes during her pregnancy, it is likely for baby's birthweight to be less than baby's birthweight from a mother who didn't smoke during prgnancy by 8.52262 ounces on average. So, the coefficient of this indicator variable represents average difference in baby's birthweight between baby from a mother who smoked during pregnancy and that from a mother who didn't smoke during pregnancy, given that other variables are constant. 
+
+#=============================
+
+#10E)
+##a) 
+
+```{r}
+women <- read.table('women.txt', header = TRUE)
+
+cor(women) #r = 0.9954948
+
+summary(lm(avew ~ h, data = women)) #r-squared = 0.991
+
+ggplot(data = lm(avew ~ h, data = women)) + geom_point(aes(x=.fitted,y=.resid)) + labs(title = 'Residual Plot of Weight on Height', x = 'Height in inch', y = 'Weight in lbs') + geom_hline(aes(yintercept = 0), col = 2)
+```
+
+##### The value of r is 0.9954948, which is almost close to one. The r-squared = 0.991 is also very high. Looking at F-test, p-value = 1.091e-14 is also extremely small compared to significance level of alpha = 0.05, so the slope is significant as well, meaning that it is likely that the slope is not equal to zero. However, the issue is the residual plot. As seen by residual plot above, the data doesn't look very homoskedatsic; it has a quadratic U shape and this suggests that perhaps linear regression isn't the best line of fit for this particular data. It seems like non-linear regression might be a better choice to predict average weight based on average height. 
+
+##b)
+
+```{r}
+ggplot(women) + geom_point(aes(x = h, y = avew)) 
+```
+
+##### The data 'women' contains average weight for women with their heights corrected to their nearest inch. That's why in the scatterplot, there's one point for each nearest inch representing average weight for women who falls under the nearest inch height. IF we instead let each point represent ehights and weight for each women, there would be more scatter of points and the correlation won't be as high as that in a. 
+
+##c)
+
+#### Polynomial Model with Degree of 2: 
+```{r}
+ggplot(data = women, aes(x = h, y = avew)) + geom_point() + stat_smooth(method = 'lm', se = FALSE, formula = y ~ poly(x, 2, raw = TRUE)) + labs(title = 'Polynomial Model with Degree of 2', x = 'Height in inch', y = 'Weight in lbs')
+
+summary(lm(avew ~ poly(h, 2), data = women)) #r-squared = 0.9995
+
+ggplot(data = lm(avew ~ poly(h, 2), data = women)) + geom_point(aes(x=.fitted,y=.resid)) + labs(title = 'Residual Plot: Polynomial with Degree of 2', x = 'Height in inch', y = 'Weight in lbs') + geom_hline(aes(yintercept = 0), col = 2)
+```
+
+#### Polynomial Model with Degree of 3: 
+```{r}
+ggplot(data = women, aes(x = h, y = avew)) + geom_point() + stat_smooth(method = 'lm', se = FALSE, formula = y ~ poly(x, 3, raw = TRUE)) + labs(title = 'Polynomial Model with Degree of 3', x = 'Height in inch', y = 'Weight in lbs')
+
+summary(lm(avew ~ poly(h, 3), data = women)) #r-squared = 0.9998
+
+ggplot(data = lm(avew ~ poly(h, 3), data = women)) + geom_point(aes(x=.fitted,y=.resid)) + labs(title = 'Residual Plot: Polynomial with Degree of 3', x = 'Height in inch', y = 'Weight in lbs') + geom_hline(aes(yintercept = 0), col = 2)
+```
+
+#### Polynomial Model with Degree of 4: 
+```{r}
+ggplot(data = women, aes(x = h, y = avew)) + geom_point() + stat_smooth(method = 'lm', se = FALSE, formula = y ~ poly(x, 4, raw = TRUE)) + labs(title = 'Polynomial Model with Degree of 4', x = 'Height in inch', y = 'Weight in lbs')
+
+summary(lm(avew ~ poly(h, 4), data = women)) #r-squared = 0.9999
+
+ggplot(data = lm(avew ~ poly(h, 4), data = women)) + geom_point(aes(x=.fitted,y=.resid)) + labs(title = 'Residual Plot: Polynomial with Degree of 4', x = 'Height in inch', y = 'Weight in lbs') + geom_hline(aes(yintercept = 0), col = 2)
+```
+
+#### Polynomial Model with Degree of 5: 
+```{r}
+ggplot(data = women, aes(x = h, y = avew)) + geom_point() + stat_smooth(method = 'lm', se = FALSE, formula = y ~ poly(x, 5, raw = TRUE)) + labs(title = 'Polynomial Model with Degree of 5', x = 'Height in inch', y = 'Weight in lbs')
+
+summary(lm(avew ~ poly(h, 5), data = women)) #r-squared = 0.9999
+
+ggplot(data = lm(avew ~ poly(h, 5), data = women)) + geom_point(aes(x=.fitted,y=.resid)) + labs(title = 'Residual Plot: Polynomial with Degree of 5', x = 'Height in inch', y = 'Weight in lbs') + geom_hline(aes(yintercept = 0), col = 2)
+```
+
+##### Starting from degree of 2, residual plot looks roughly scattered around zero with similar variance, so residual plot for degree of 2, 3, 4, and 5 look all roughly homoskedastic. Also, r-squared values for all of these different degrees are very similar. For degree of 2, r-squared value = 0.995, for degree of 3, r-squared value = 0.998, and for degree of 4 and 5, r-squared value = 0.999. Since r-squared values are all very high and close to each other,  I would choose polynomial model with degree of 2 because starting from degree of 2 and onward, r-squared values are very similar and as consistently stated above, we tend to go with simpler models if there isn't much difference. So, I want to choose degree of 2 polynomial to fit the model. 
+
+#=======================
+
+#10F
+##a) 
+
+```{r}
+bodytemp <- read.table('bodytemp.txt', header = TRUE)
+
+ggplot(data = bodytemp %>% filter(gender == 1), aes(x = temperature, y = rate)) + geom_point() + labs(title = 'Scatterplot of Male Heart Rate versus Body Temp')
+```
+##### The points on the scatterplot above for males looks very scattered and just looks like clustered cloud of points; it's hard to tell if there's a certain relationship between the two. 
+
+```{r}
+ggplot(data = bodytemp %>% filter(gender == 2), aes(x = temperature, y = rate)) + geom_point() + labs(title = 'Scatterplot of Female Heart Rate versus Body Temp')
+```
+
+##### Similar to the one above for males, the points on the scatterplot above for females also looks very scattered and just looks like clustered cloud of points; it's hard to tell if there's a certain relationship between the two. 
+
+##b) 
+
+```{r}
+ggplot(data = bodytemp, aes(x = temperature, y = rate)) + geom_point(aes(colour = factor(gender)), size = 2) + labs(title = 'Scatterplot of Male and Female Heart Rate versus Body Temp')
+```
+
+##### Red dots represent heart rate and temperature for each male and blue dots represent those for each female. As seen by scatter plot above, the relationship for males appear to be smiliar as that for females. However, compared to males, data for both heart rate and temperature for women seem to be more scattered out (less clustered, so more variable). 
+
+##c) 
+
+```{r}
+#Fitting Linear Regression: 
+ggplot(data = bodytemp %>% filter(gender == 1), aes(x = temperature, y = rate)) + geom_point() + geom_smooth(method=lm,se=FALSE) + labs(title = 'Linear Regression for Predicting Male Heart Rate from Temperature')
+
+#Plotting Residuals: 
+ggplot(data = lm(rate ~ temperature, data = bodytemp %>% filter(gender == 1))) + geom_point(aes(x=.fitted,y=.resid)) + labs(title = 'Residual Plot for Male') + geom_hline(aes(yintercept = 0), col = 2)
+
+summary(lm(rate ~ temperature, data = bodytemp %>% filter(gender == 1)))
+#estimated slope = 1.645, standard error = 1.039
+#r-squared: 0.03826
+```
+
+##### Residual plot looks good, as variance of residuals seem to be similar to each other and look like a blob of points, but I wouldn't conclude linear relationship just by looking at the residual plot because the original scatter plot sort of look like this residual plot where points are just scattered everywhere and don't show sign of linear relationship. This can be confirmed by small r-squared value of 0.03826 So, it seems like goodness of fit for this linear regression is not very good. Although slope is 1.645, it doesn't look very significant, as p-value of 0.118 is bigger than significance level of alpha = 0.05. So, in this case, we cannot reject the null and conclude that we don't have enough evidence to say that the slope is significantly different from zero. So, judging by all the information gathered, I don't think linear regression is the best fit to predict males' heart rate from temperature. 
+
+##d) 
+
+```{r}
+#Fitting Linear Regression: 
+ggplot(data = bodytemp %>% filter(gender == 2), aes(x = temperature, y = rate)) + geom_point() + geom_smooth(method=lm,se=FALSE) + labs(title = 'Linear Regression for Predicting Female Heart Rate from Temperature')
+
+#Plotting Residuals: 
+ggplot(data = lm(rate ~ temperature, data = bodytemp %>% filter(gender == 2))) + geom_point(aes(x=.fitted,y=.resid)) + labs(title = 'Residual Plot for Female') + geom_hline(aes(yintercept = 0), col = 2)
+
+summary(lm(rate ~ temperature, data = bodytemp %>% filter(gender == 2)))
+#estimated slope = 3.128, standard error = 1.316
+#r-squared: 0.08233
+```
+
+##### Residual plot looks okay. Although at the extremes of fitted values, residuals are close to zero and in the middle of fitted values, residuals seem to be a lot larger than zero, but in general it's not too bad and residuals seem to follow homoskedastic assumptions. Compared to that of males, the r-squared value (0.08233) for females is slightly higher, but still it's not high enough and thus predictive power isn't that strong to predict females heart rate based on temperature. Unlike that of males, the slope for females linear regression is significant. The p-value for slope for female data is 0.0205, which is less than significance level of alpha = 0.05. Thus, we would reject the null and conclude that it seems likely for slope to be significantly different from zero. So, judging from this information, I think we can conclude that linear regression in this case could be useful in fitting the data, but because it has such a small r-squared value, this linear regression wouldn't be very useful as it has small predictive power and doesn't seem to be a good fit to model the data. 
+
+##e)
+
+* H0: The slopes for males and females are equal (difference = 0)  
+* H1: The slopes for males and females are different (difference != 0)  
+
+```{r}
+#From infomration above, we know that: 
+  #for male, estimated slope = 1.645, standard error = 1.039
+  #for female, estimated slope = 3.128, standard error = 1.316
+
+length(bodytemp$temperature) #since sample size = 130, normal approximation is appropriate to use for the test
+
+diff <- 3.128 - 1.645 #test statistic
+
+se <- sqrt((1.039 ^ 2) + (1.316 ^ 2)) #assuming men and women data are independent
+
+z <- diff / se 
+p <- 1 - pnorm(z)
+p #p-value = 0.1882221, which is greater than significance level alpha = 0.05, so we fail to reject the null. So, we don't have enough evidence to say that slopes for males and females are different. 
+
+```
+
+##f) 
+
+* H0: The intercepts for males and females are equal (difference = 0)  
+* H1: The intercepts for males and females are different (difference != 0)  
+
+```{r}
+#From infomration above, we know that: 
+  #for male, estimated intercept = -87.967, standard error = 101.919
+  #for female, estimated intercept = -233.624, standard error = 129.463
+
+length(bodytemp$temperature) #since sample size = 130, normal approximation is appropriate to use for the test
+
+diff <- -87.967 - (-233.624) #test statistic
+
+se <- sqrt((101.919 ^ 2) + (129.463 ^ 2)) #assuming men and women data are independent
+
+z <- diff / se 
+p <- 1 - pnorm(z)
+p #p-value = 0.1883432, which is greater than significance level alpha = 0.05, so we fail to reject the null. So, we don't have enough evidence to say that intercepts for males and females are different. 
+
+```

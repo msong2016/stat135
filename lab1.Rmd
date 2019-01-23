@@ -1,0 +1,828 @@
+---
+title: "Stat135 lab week 1"
+output: learnr::tutorial
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(ggplot2)
+#library(dplyr)
+#library(DataComputing)
+#library(devtools)
+#devtools::install_github("DataComputing/DataComputing")
+library(mosaicData)
+knitr::opts_chunk$set(echo = TRUE)
+```
+## data types in R
+
+R has a wide variety of data types including *scalars*, *vectors* (numerical, character, logical), *matrices*, *data frames*, and *lists*.
+
+For example the number 2 is a scalar. We can give 2 the name `a` using the assignment operator `->` which is essentially the same thing as `=`.
+
+```{r}
+a <- 2  #assign the value 2 to a
+a
+```
+
+Similarly we can assign the name `vec` to a character vector as follows:
+
+```{r}
+vec <- c("I","love","learning","R")
+vec
+```
+
+Here the values `I`, and `love` are strings which we must put in quotes so that R doesn't think they are the name for something.
+
+You can write a numerical vector two different ways:
+```{r}
+c(1,2,3,4,5)
+1:5
+```
+
+The empty vector is `c()`
+```{r}
+c()
+```
+
+
+We will see other examples of data types later.
+
+##Practice with conditionals 
+
+A *condition* is either true or false (a logical data type). For example, when we write 
+```{r}
+a <- 2
+b <- 3
+a<b  #less than
+a==b #equals
+a!=b #not equal
+```
+`a<b` is a *condition* that takes the value `TRUE` (since 2 is less than 3) while `a==b` is a condition that takes the value `FALSE`.
+
+We use conditions when we write `conditional` statements. A conditional statement says to do one thing if a condition is `TRUE` and something else when it is `FALSE`.
+
+The basic syntax for an `if/else` statement is
+
+```{r, eval=FALSE}
+if ( condition ) { #condition needs to give out boolean
+  statement1 # single &: gives out vector and if it's in if situation, use &&
+} else {
+  statement2
+}
+```
+
+You can also write this on a single line as:
+```{r, eval=FALSE}
+if(condition) statement1 else statement2
+```
+
+In the exercise below you will determine whether the year 2013 is a leap year. The condition for a year to be a leap year is written in terms of the modulo operator, `%%` in R. 
+
+For example
+```{r}
+15 %% 2
+15 %% 3
+```
+
+We see that 15 modulo 2 is one because the remainder when you divide 15 by 2 is 1. Similarly when you divide 15 by 3 you don't get any remainder.
+
+A variable that takes two values (`TRUE` or `FALSE`) is called a boolean variable. We can use a boolean variable to write a condition.
+
+
+Assign **TRUE** to the boolean variable leapYear if the integer variable year is a
+leap year and **FALSE** otherwise. The rule for determining leap years is that one of the following conditions must hold:
+1) the year is divisible by 4 but not divisible by 100, or 
+2) the year is divisible by 400.
+
+Below you will figure out if the year 2013 is a leap year.
+```{r,cond, exercise = TRUE, exercise.setup = "cond-setup", exercise.eval = FALSE, message=FALSE}
+year <- 2013
+if((year %% 4 == 0 & year %% 100 != 0) | year %% 400 == 0) {
+  leapyear <- TRUE
+  } else {
+    leapyear <- FALSE
+}
+leapyear
+
+```
+
+```{r  cond-hint, echo = FALSE}
+
+# if((year%%4==0 & year%%100 != 0) | (year%% 400 ==0)  ) leapyear <- TRUE 
+# etc....
+
+```
+
+
+
+```{r cond-solution, echo = FALSE}
+year <-  2013
+if((year%%4==0 & year%%100 != 0) | (year%% 400 ==0)  ) leapyear <- TRUE  else leapyear <- FALSE
+leapyear
+```
+
+
+```{r,include=TRUE}
+
+```
+
+
+
+##Practice with loops
+
+When we want to repeat a group of statements (such as to roll a die and append the face value to a vector) we write a loop in R. The R commands `for` and `while` are often used.
+
+The syntax of `for` and `while` loops is:
+
+```{r, eval=FALSE}
+
+for ( name in vector ){ 
+  statement
+}
+
+```
+
+For example `i in 1:6` assigns the name `i` to values 1,2,3,4,5,6 in the vector `1:6`. For each value of `i` we roll a coin `i` times, assign those face values to the vector `a` and print the value of `a`.
+```{r}
+for(i in 1:6){
+  a <- sample(1:6,i)
+  print(a)
+}
+```
+
+
+
+
+```{r,eval=FALSE}
+while (condition){
+  statement
+}
+```
+
+For example starting with i equal to 1, while the condition `i<6` is true we roll a coin `i` times, assign those face values to the vector `a`, print the value of the vector, and increase the value of i by 1.
+```{r}
+i <- 1
+while(i<7){
+  a <- sample(1:6,i)
+  print(a)
+  i <- i+1
+}
+```
+
+Here is some examples for you to try:
+
+
+Simulate rolling a die until you get a 4. Create a vector of your rolls.
+
+
+```{r,loop, exercise = TRUE, exercise.setup = "DC-2017-02-14-08371a-setup", exercise.eval = FALSE}
+
+rolls <- c()
+die_roll <- 0
+while(die_roll != 4) {
+  die_roll <- sample(1:6, 1)
+  rolls <- c(rolls, die_roll)
+}
+rolls
+
+```
+
+```{r}
+rolls <- c()
+while(!4 %in% rolls)
+  rolls <- c(rolls, sample(1:6))
+
+rolls
+
+```
+
+```{r  loop-hint, echo = FALSE}
+
+# sample(1:2,1) is a coin toss. Adapt this to roll a die.
+
+```
+
+
+
+```{r loop-solution, echo = FALSE}
+myrolls <- c()  #empty vector
+roll <- 1000 #some number not 1 through 6
+while(roll != 4){
+  roll <- sample(1:6,1)
+  myrolls=c(myrolls,roll)
+}
+myrolls
+```
+
+
+The `break` statement causes a loop to exit. You will see an example in the next question.
+
+Here is a character vector called `chars`
+
+```{r loop1-setup, echo = FALSE}
+# Pre-defined variables
+rquote <- "R's internals are irrefutably intriguing"
+chars <- strsplit(rquote, split = "")[[1]]
+```
+
+```{r, echo=FALSE}
+rquote <- "R's internals are irrefutably intriguing"
+chars <- strsplit(rquote, split = "")[[1]]
+chars
+```
+
+
+
+Count the number of "r"s (both "r" and "R") that come before the first letter "u"  (both "u" and "U") in the rquote character string. Store the result in a variable rcount.
+
+```{r loop1, exercise = TRUE,  exercise.eval = FALSE, exercise.setup = "loop1-setup"}
+count <- c()
+for(i in 1:length(chars)) {
+  if(chars[i] == "u" | chars[i] == "U") {
+    break
+  }
+  if(chars[i] == "r" | chars[i] == "R") {
+    count[i] <- chars[i]
+  }
+}
+count <- length(na.omit(count))
+count
+
+```
+
+```{r  loop1-hint, echo = FALSE}
+# you are counting the number of "r" or "R". Use an if statement here and update rcount.
+
+```
+
+```{r loop1-solution, echo = FALSE}
+
+rcount <- 0
+for (char in chars) {
+  if (char == "u" | char == "U") {
+    break
+  }
+  if (char == "r" | char == "R") {
+    rcount <- rcount + 1
+  }
+}
+
+# Print the resulting rcount variable to the console
+rcount
+```
+
+
+##Practice with functions problem 1
+
+R has many *built in* functions such as `mean()` which give the average of a numerical vector `a`:
+```{r}
+a <- c(1,2,3)
+mean(a)
+```
+
+One of the great strengths of R is the user's ability to write their own functions. In programming, you use functions to incorporate sets of instructions that you want to use repeatedly or that, because of their complexity, are better self-contained in a sub program and called when needed.
+
+
+ A function is a piece of code written to carry out a specified task; it can or can not accept arguments or parameters and it can or can not return one or more values.
+ 
+ 
+
+The syntax of a user defined function in R is:
+```{r,eval=FALSE}
+my_func <- function(arguements){  #assigns a name my_func to the function
+  computations on the arguements
+}
+my_func() #calls the function
+```
+
+For example here is a function that squares any number you give it. When we call the function `my_func(10)` the value 10 is assigned the name `n` inside the body of the function. The value of `n*n` is returned.
+````{r}
+my_func <- function(n){
+  return(n*n)
+  }
+my_func(10)
+```
+
+
+
+ 
+Recall this is how you tested that a year is a leap year:
+```{r,eval=FALSE}
+year <-  2013
+if((year%%4==0 & year%%100 != 0) | (year%% 400 ==0)  ){
+  leapyear <- TRUE}
+else{
+  leapyear <- FALSE
+}
+leapyear
+```
+
+
+Make a function called `test_year` that inputs a year and outputs whether the year is a leap year. Call the function with the year 2000 to see whether 2000 was a leap year.
+
+
+```{r,cond1, exercise = TRUE, exercise.setup = "cond-setup", exercise.eval = FALSE, message=FALSE}
+
+test_year <- function(year) {
+  if((year%%4==0 & year%%100 != 0) | (year%% 400 ==0)  ){
+  return(TRUE)
+    } else {
+  return(FALSE)
+    }
+}
+  
+
+test_year(2000)
+
+
+```
+
+```{r  cond1-hint, echo = FALSE}
+
+# test_year <- function(year){
+#etc ...
+#}
+# test_year(2000)
+
+```
+
+
+
+```{r cond1-solution, echo = FALSE}
+#' @title test_year
+#' @description tests whether input year is leap year or not
+#' @input year
+#' @output boolean of TRUE or FALSE
+
+test_year <- function(year){
+  if((year%%4==0 & year%%100 != 0) | (year%% 400 ==0)) {
+    leapyear <- TRUE}
+  else {
+    leapyear <- FALSE}  
+  leapyear
+}
+test_year(2000)
+```
+
+
+```{r,include=TRUE}
+
+```
+
+##Practice with functions problem 2
+
+Recall that this is how we simulated rolling a die until you get a 4 creating a vector of 
+
+```{r,eval=FALSE}
+myrolls <- c()
+roll <- 1000 #some number not 1 through 6
+while(roll != 4){
+  roll <- sample(1:6,1)
+  myrolls <- c(myrolls,roll)
+}
+myrolls
+```
+
+Write a function called `coin_toss` that inputs a positive integer, n, and outputs a random vector of tails and heads (1 and 0) until you get your nth head. Call the function with n=3 and examine the vector output to make sure it makes sense.
+
+
+```{r,loop1a, exercise = TRUE, exercise.setup = "DC-2017-02-14-08371a-setup", exercise.eval = FALSE}
+#' @title coin_toss
+#' @description shows heads and tails randomly generated in each roll until getting nth head
+#' @input number of head desired before stopping
+#' @output random vector of tails and heads, where heads = 1 and tails = 0
+
+coin_toss <- function(n) {
+  if(n <= 0) {
+    print("n is not a positive value")
+  } else {
+    rolls <- c()
+    while(sum(rolls) != n) {
+      rolls <- c(rolls, sample(0:1, 1))
+    }
+    return(rolls)
+  }
+}
+  
+coin_toss(-1)
+
+```
+
+```{r  loop1a-hint, echo = FALSE}
+#coin_toss <- function(n){
+#  etc...
+#}  
+#coin_toss(3)
+
+```
+
+
+
+```{r loop1a-solution, echo = FALSE}
+coin_toss <- function(n){
+  mytosses <- c()
+  counter <- 0
+  while(counter<n){
+    toss <- sample(0:1,1)
+    mytosses <- c(mytosses,toss)
+    if(toss==1){
+      counter=counter+1
+    }
+  }
+  mytosses
+}
+coin_toss(3)
+```
+
+
+##Practice with functions problem 3
+
+Write a function that approximates the value of pi by summing the terms of this series:
+4/1-4/3+4/5-4/7+4/9-4/11+ ...  The function has a single input, n, which is the number of terms to sum. It outputs the sum of the first n terms of this series, as well as the difference of the sum and pi. Call the function to estimate pi with 20 terms.
+
+
+```{r,loop3a, exercise = TRUE, exercise.setup = "DC-2017-02-14-0837a-setup", exercise.eval = FALSE}
+#' @title approx_pi()
+#' @description approximates the value of pi by summing the terms of this series
+#' @input number of terms
+#' @output list of sum of the first n terms of this series and difference of the sum and pi
+
+approx_pi <- function(i) {
+  n <- -1
+  even <- 0
+  odd <- 0
+  for (i in 1:i) {
+  n <- n + 2
+  if(i %% 2 == 0) {
+    even <- even - (4/n)
+  }
+  if(i %% 2 != 0) {
+    odd <- odd + (4/n)
+  }
+  }
+  expected <- sum(even, odd)
+  return(list(expected, pi - expected))
+}
+
+approx_pi(20)
+
+```
+
+```{r  loop3a-hint, echo = FALSE}
+#use a for loop
+#sum=0
+#for(i in 1:n){
+ #   increment <- (-1)^(i+1) * 4/(2*i-1)
+#    sum=sum + increment
+
+#to return multiple values use a list  (i.e. return(list(sum, pi-sum))
+
+```
+
+
+
+```{r loop3a-solution, echo = FALSE}
+my_pi <- function(n){
+  sum=0
+  for(i in 1:n){
+    increment <- (-1)^(i+1) * 4/(2*i-1)
+    sum=sum + increment
+  }
+  return(list(sum, pi-sum))
+}
+my_pi(20)
+```
+
+
+##Practice with ggplot
+
+ggplot2 is a popular package in R for making graphics. We will cover the basics below by presenting a number of examples and then giving you a cheat sheet so that you can make up your own examples.
+
+
+### examples
+Here is the data frame mosaicData::CPS85 giving data from the 1985 Current Population Survey. (`mosaicData` is a package and CPS85 is a data frame data type in that package)
+```{r}
+head(CPS85)  #we examine just the first 6 rows of CPS85
+```
+The data frame consists of columns which are vectors of the same length, and rows which are observations of each vector. 
+
+The package ggplot2 contains the built in function `ggplot` which takes as its first arguement a data frame and as its second arguement information about which variable variable in the data frame is x and which is y. This pairing is a special function `aes` (called an *aethetic*). The function ggplot outputs an x y empty graph. Below we assign this empty graph the name frame and display it.
+
+
+```{r, echo=TRUE}
+frame <- ggplot(CPS85,aes(x=age,y=wage)) 
+frame
+```
+
+We will use the piping operator `%>%` from the `dplyr` package (included in your DataComputing package) to make it a little easier to read the above commond.
+
+We can pipe the data frame `CPS85` into ggplot using the piping operator `%>%`. 
+
+```{r, echo=TRUE}
+frame <- CPS85 %>% ggplot(aes(x=age,y=wage)) 
+frame
+```
+
+We will layer our graph by adding points to it using the command `geom_point()`.
+
+
+```{r, echo=TRUE}
+frame <- CPS85 %>% ggplot(aes(x=age,y=wage)) 
+frame + geom_point()
+```
+
+We can assign a shape to each point using the aesthetic function inside of geom_point. Here, shape is assigned to the variable sex. This will create a legend.
+
+```{r, echo=TRUE}
+frame <- CPS85 %>% ggplot(aes(x=age,y=wage)) 
+frame + geom_point(aes(shape=sex))
+```
+
+We can separate married and unmarried individuals by faceting our graph according to the variable married.   
+
+
+```{r, echo=TRUE}
+frame <- CPS85 %>% ggplot(aes(x=age,y=wage)) 
+frame + geom_point(aes(shape=sex)) + facet_grid(married ~ .)
+```
+
+We can change the range of values along the y axis:
+
+```{r, echo=TRUE}
+frame <- CPS85 %>% ggplot(aes(x=age,y=wage)) 
+frame + geom_point(aes(shape=sex)) + facet_grid(married ~ .) + ylim(0,30)
+```
+
+Here is a cheet sheet:
+(Rstudio)[https://www.rstudio.com/wp-content/uploads/2015/03/ggplot2-cheatsheet.pdf]
+
+It is important to be able to look up the syntax and aesetics for the different geoms. Here is a good resourse from [ggplot2.org](http://docs.ggplot2.org/current/index.html)
+
+
+### Your turn
+
+
+Please make
+
+```{r, echo=FALSE}
+
+CPS85 %>% ggplot(aes(x=age,wage)) + geom_point(aes(color=married)) + facet_wrap(~sex)
+```
+
+from the dataframe:
+```{r}
+head(CPS85)
+```
+
+
+
+```{r,cond3, exercise = TRUE, exercise.setup = "cond-setup", exercise.eval = FALSE, message=FALSE}
+
+```
+
+```{r  cond3-hint, echo = FALSE}
+#use CPS85 %>% ggplot(aes(x=age,wage))
+#use facet_wrap(~sex)
+
+```
+
+
+
+```{r cond3-solution, echo = FALSE}
+CPS85 %>% ggplot(aes(x=age,wage)) + geom_point(aes(color=married)) + facet_wrap(~sex)
+```
+
+
+```{r,include=TRUE}
+
+```
+
+
+
+##`sample()` in R
+
+In this lab we will show you how to make a simulation in R. Two very handy built in functions for simulations is `sample()` and `replicate()`. You saw `sample()` in lab 1 but here is a refresher.
+
+In Nevada Roulette you spin a ball around a wheel containing 38 pockets of different colors. 18 pockets are red, 28 are black, and 2 are green. The ball randomly falls in one of the pockets.
+
+Lets create a vector of outcomes of playing roulette 10 times. Our goal is to see what proportion of times we the ball lands in the red pocket.
+
+```{r}
+vec <- sample(c("b","r","g"),size=10,prob=c(18/28,18/38,2/38),replace=TRUE)
+vec
+```
+
+You count the number of "r" in the sample vector (i.e. the number of red pockets you landed on in 10 games). Try and understand what is happening in the following code.
+
+```{r}
+vec=="r"   #this is a boolean vector
+sum(vec=="r")
+sum(vec=="r")/length(vec)
+```
+
+### Your turn:
+
+```{r,norm11-setup, exercise = FALSE, exercise.setup = "norm", exercise.eval = FALSE, message=FALSE}
+library(DataComputing)
+```
+
+Use the function `sample()` to simulate rolling a fair die 60 times. Compute the fraction of 1 that you get.
+
+```{r norm11, exercise=TRUE, exercise.eval=FALSE}
+
+rolls <- c()
+total <- 0
+for(i in 1:60) {
+  rolls[i] <- sample(1:6, 1)
+  if(rolls[i] == 1) {
+    total <- total + 1
+  } else {
+    total <- total + 0
+  }
+}
+total / 60
+  
+```
+
+
+
+```{r norm11-solution}
+vec <- sample(c(1,2,3,4,5,6),size=60,prob=c(1/6,1/6,1/6,1/6,1/6,1/6),replace=TRUE)
+vec
+sum(vec==1)/length(vec)
+```
+### Another example
+
+Suppose you have vectors 
+```{r}
+a <- c(1,2,3)
+b <- c("a","b","c")
+```
+
+You can make a data frame with column variables `a` and `b` using the function `data.frame()`
+
+```{r}
+data.frame(a,b)
+```
+
+I would like you to create a data frame with column variables equal to the number of coin tosses and the number of heads you get for different number of coin tosses. You should have all of the tools to do this.
+
+
+```{r,norm-setup, exercise = FALSE, exercise.setup = "norm", exercise.eval = FALSE, message=FALSE}
+library(DataComputing)
+
+coin <- function(n) {
+  if(n <= 0) {
+    print("n is not a positive value")
+  } else {
+    rolls <- c()
+    for(i in 1:n) {
+      rolls <- c(rolls, sample(0:1, 1))
+    }
+    return(sum(rolls))
+  }
+}
+  
+num_tosses <- c(100, 1000)
+num_heads <- c(coin(100), coin(1000))
+
+data.frame(num_tosses, num_heads)
+
+
+```
+
+```{r norm, exercise=TRUE, exercise.eval=FALSE}
+
+
+```
+
+
+
+```{r norm-solution}
+size_vec=c()
+num_heads_vec=c()
+for(size in c(10,100)){
+  vec <- sample(c("head","tail"),size=size,prob=c(1/2,1/2),replace=TRUE)
+  size_vec=c(size_vec,size)
+  num_heads_vec <- c(num_heads_vec,sum(vec=="head"))
+}
+df <- data.frame(size_vec,num_heads_vec)
+df
+```
+
+### Another example
+
+The Law of averages in statistics states that if you flip a fair coin n times that the proportion of heads that you get will get closer and closer to .5 as n gets larger. Lets test the law of averages with a simulation.
+
+Create a data frame with 3 columns.  One column is the number of flips. Say you flip the coin 100,1000, 10000, 100000, 1000000 times. The second column is the percent of heads that you get. The third column is the percent error which is the difference between the percent of heads that you get and the percent of heads that you were expecting.
+
+
+
+```{r,norm1-setup, exercise = FALSE, exercise.setup = "norm", exercise.eval = FALSE, message=FALSE}
+#library(DataComputing)
+
+flips <- c(100, 1000, 10000, 100000, 1000000)
+
+num_heads <- c()
+
+for(i in 1:length(num_flips)) {
+  tosses <- sample(0:1, num_flips[i], replace = TRUE)
+  num_heads[i] <- sum(tosses)
+}
+
+
+data.frame(flips, heads_percent = num_heads / flips, diff = heads_percent - 0.5)
+
+
+
+
+```
+
+```{r norm1, exercise=TRUE, exercise.eval=FALSE}
+
+
+```
+
+
+
+
+
+```{r norm1-solution}
+size_vec=c()
+num_heads_vec=c()
+for (size in c(100, 1000, 10000, 100000, 1000000)){
+  vec <- sample(c("head","tail"),size=size,prob=c(1/2,1/2),replace=TRUE)
+  size_vec=c(size_vec,size)
+  num_heads_vec <- c(num_heads_vec,sum(vec=="head"))
+}
+df <- data.frame(size_vec, percent_heads= 100*num_heads_vec/size_vec, percent_error=100*(num_heads_vec - size_vec*.5)/size_vec)
+df
+ 
+```
+
+Does your simulation support the Law of averages?
+
+
+##`replicate() in R`
+
+`replicate()` repeats a function over and over again.
+For example suppose you have a function that returns the phrase "I Love Stats". Replicate print this out many times. It is generally faster than using a traditional loop.
+
+```{r}
+B=5
+fun <- function(){
+  return("I love Stats!")
+}
+fun()
+
+my_vec <- replicate(B,fun())
+my_vec
+```
+
+Here is another example for you to try:
+
+###Lets make a deal
+
+What is better deal?
+
+
+Win $1 if out of 10 flips of fair coin you get exactly 5 heads.
+
+
+Win $1 if out of 100 flips of fair coin you get exactly 50 heads.
+
+Make a simulation of flipping a coin `size=100` number times and seeing if we get exactly 50. We will do this exeriment `B=200` times and compute the percentage of times that it is exactly 50.
+
+
+
+
+```{r norm3, exercise=TRUE, exercise.eval=FALSE}
+
+```
+
+
+
+
+```{r norm3-solution}
+
+B=200
+
+fun <- function(size){
+  vec <- sample(c(0,1),size = size,prob=c(.5,.5),replace = TRUE)
+  sum(vec)==(.5)*size
+}
+
+my_vec <- replicate(B, fun(10))  #10 flips
+my_vec
+mean(my_vec)
+
+my_vec <- replicate(B, fun(100))  #100 flips
+my_vec
+mean(my_vec)
+```
+
+Make sure you understand what is going on in your solution of this simulation.
+Your simulation should show you that you should bet on getting exactly half of a smaller number of tosses? Can you explain why this is true intuitively?
+
+

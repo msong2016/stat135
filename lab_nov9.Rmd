@@ -1,0 +1,29 @@
+---
+title: "lab_nov9"
+author: "Julie Song"
+date: "11/9/2018"
+output: html_document
+---
+```{r}
+library(ggplot2)
+
+
+```
+
+
+```{r}
+#The file sapphire lists observed values of Young’s modulus (g) measured at various temperatures (T) for sapphire rods (Ku 1969). Fit a linear relationship g = β0 + β1t and form confidence intervals for the coefficients. Examine the residuals. (See data on bCourses.)
+
+sapphire <- read.table('sapphire.txt', header = TRUE)
+length(sapphire[,1])
+
+sapphire_info <- summary(lm(sapphire[,1] ~ sapphire[,2]))
+sapphire_info
+
+resid(lm)
+
+ggplot(sapphire, aes(x = Temperature..K., y = Modulus...3000.)) + geom_point() + geom_smooth(method='lm', se = FALSE)
+  
+
+
+```

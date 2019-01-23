@@ -1,0 +1,320 @@
+---
+title: "Stat135 lab2"
+output: learnr::tutorial
+runtime: shiny_prerendered
+---
+
+
+#PG. 284 READ READ READ READ READ READ REAAAAAAAD
+
+```{r setup, include=FALSE}
+library(learnr)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message=FALSE,echo=TRUE}
+library(DataComputing)
+library(mosaicData)
+library(dplyr)
+
+```
+
+
+##bootstrapping a 95% CI  
+
+### Data Cleaning a data set.
+Lets load some maternity data from the Kaiser database into R.
+
+```{r message=FALSE}
+
+#the function load, loads a dataset into your workspace. It outputs a vector of all dataframes in the data set. In this case there is just one data set called infants. 
+data <- load(url("https://www.stat.berkeley.edu/users/nolan/data/KaiserBabies.rda"))
+data
+
+ #We will eliminate observations if the `smoke` doesn't take the value `smoke=Never` or `smoke=Now`. 
+
+infants <- infants %>% filter(smoke=="Never" |  smoke =="Now") 
+infants <- na.omit(infants)  #remove all NA from data frame
+```
+
+
+```{r}
+head(infants)
+```
+
+This data set contains a sample of personal information about the family of babies born at Kaiser in San Francisco. We wish to get a 95% CI for the population weight of the San Francisco mothers at the time of delivery. We will use variable `wt`.
+
+
+### Step 1: Take a sample one time from your population.
+
+This was already done by Kaiser in creating the data set. The sampling method isn't important to us although we assume that it is unbiased.
+
+```{r}
+mysample <- infants$wt
+sample_size <- length(mysample)
+sample_mean <- mean(mysample)  # the mean of your original sample
+sample_size
+sample_mean
+```
+
+### Step 2: Resample from `mysample` B=1000 times with replacement (size `sample_size`). Form a vector of sample estimates of your parameter.
+
+```{r}
+
+B=1000
+# the function is used to find the average of each size-100 samples
+find_avg <- function(){
+  resample <- sample(mysample, size = 570, replace = T)
+  xbar <- mean(resample)
+  xbar
+}
+# we will run the above function 1000 times
+vec <- replicate(B, find_avg())
+```
+
+### Step 3: subtract your `sample_mean` from your vector of estimates
+
+
+```{r}
+vec_minus_mean <- vec - sample_mean
+```
+
+### Step 4: Find the 2.5th and 97.5th percentile of your vector
+
+```{r}
+a <- quantile(vec_minus_mean, .025)
+b <- quantile(vec_minus_mean, .975)
+a
+b
+```
+
+### Step 5: Find the 95% CI
+
+```{r}
+bootCI <- c(sample_mean-b,sample_mean-a)
+bootCI
+```
+
+
+
+###Your turn:
+
+Find a 90% CI for the median gestation period `gestation` from the  `infants` data set above.
+
+```{r,exper-his2-setup, exercise = FALSE, exercise.setup = "exper-hist", exercise.eval = FALSE, message=FALSE}
+library(dplyr)
+library(ggplot2)
+
+data <- load(url("https://www.stat.berkeley.edu/users/nolan/data/KaiserBabies.rda"))
+data
+infants <- na.omit(infants) 
+
+set.seed(7)   #The function set.seed makes it so that everyone will be using the same sample.
+
+infants <- infants %>% filter(smoke=="Never" |  smoke =="Now") 
+infants <- na.omit(infants)  #remove all NA from data frame
+
+```
+
+
+```{r exper-his2, exercise=TRUE, exercise.eval=FALSE}
+
+### Step 1: Take a sample one time from your population.
+one_sample <- infants$gestation
+median(one_sample)
+one_size <- length(one_sample)
+one_median <- median(one_sample)  # the mean of your original sample
+one_size
+one_median
+one_sample
+
+### Step 2: Resample from `mysample` B=1000 times with replacement (size `sample_size`). Form a vector of sample estimates of your parameter.
+B=1000
+# the function is used to find the average of each size-100 samples
+find_med <- function(){
+  resample <- sample(one_sample, size = one_size, replace = T)
+  xbar <- median(resample)
+  xbar
+}
+# we will run the above function 1000 times
+vec <- replicate(B, find_med())
+
+### Step 3: subtract your `sample_mean` from your vector of estimates
+vec_minus_median <- vec - one_median
+
+### Step 4: Find the 2.5th and 97.5th percentile of your vector
+c <- quantile(vec_minus_median, .05)
+d <- quantile(vec_minus_median, .95)
+c
+d
+
+### Step 5: Find the 95% CI
+
+CI <- c(one_median-d,one_median-c)
+CI
+
+```
+
+
+
+```{r exper-his2-solution}
+
+mysample =na.omit(infants$gestation)
+sample_size <- length(mysample)
+sample_med <- median(mysample)  # the mean of your original sample
+sample_size
+sample_med
+
+B=1000
+# the function is used to find the average of each size-100 samples
+find_median <- function(){
+  resample <- sample(mysample, size = 570, replace = T) #570 not necessary: it's going to automatically sample the size of my sample
+  med <- median(resample)
+  med
+}
+
+# we will run the above function 1000 times
+vec <- replicate(B, find_median())
+vec_minus_med <- vec - sample_med
+
+a <- quantile(vec_minus_med, .05)
+b <- quantile(vec_minus_med, .95)
+a
+b
+
+bootCI <- c(sample_med-b,sample_med-a)
+bootCI
+```
+
+## another example
+
+The vector `mysample` is a sample of 30 participants running time (in seconds) from the 2005 Chery Blossom 10 mile running race. This race has over 10,000 participants.
+
+```{r,echo=FALSE}
+mysample <- sample(TenMileRace$time,30)
+```
+
+```{r}
+mysample
+```
+
+We would like to find a 90% CI for the median `time` of completion in the race.
+
+a) Why might you want to use a non parametric bootstrap to do this? Explain in detail.
+
+```{r exper1, exercise=TRUE, exercise.eval=FALSE}
+#explain your reasoning in words
+
+#conditions for CI: 
+#1: sampling distribution of median has to be approximately normal
+#2: need SRS
+#But this is very restrictive, so use non parametric bootstrap that doesn't make these assumptions
+
+#also, variance not given --> without knowing distribution, we can't compute with what we are given
+#bootstrap gets approximation to sampling distribution
+```
+
+
+```{r exper1-solution}
+
+#answ: you need median to be normal for CI and distribution of medians won't be normal. Also, the initial sample might not be collected with SRS (of course the resampling has to be random with replacement).
+```
+
+b) Show the R code to compute the sample median using the R function `median()`. Call this `sample_med`.
+
+```{r exper2, exercise=TRUE, exercise.eval=FALSE}
+sample_med <- 
+
+
+
+
+
+
+
+```
+
+
+```{r exper2-solution}
+
+#answ:
+sample_med <- median(mysample)
+```
+
+
+c) Here is a snipet of R code you need to perform a nonparametric bootstrap. Explain what is happening when you run this code
+
+```{r}
+
+B=1000
+find_med <- function(){
+  resample <- sample(mysample, size = 30, replace = TRUE)
+  med <- median(resample)
+  med
+}
+
+med_vec <- replicate(B, find_med())
+
+med.med_vec <- median(med_vec)
+```
+
+
+```{r exper3, exercise=TRUE, exercise.eval=FALSE}
+#explain your reasoning in words
+```
+
+
+```{r exper3-solution}
+
+#answ:
+#We are creating a vector of size 1000 of sample medians and finding the median of that vector. The code `sample(mysample, size = 32, replace = TRUE)` inside the function resamples with replacement from `mysample`. The code `replicate(B, find_med())` calls the function `find_med()` 1000 times returning the median value of the sample found each time, thus creating the vector `med-vec`. 
+```
+
+
+d) Here is a histogram of the sampling distribution of `medians`:
+
+```{r}
+df <- data.frame(med_vec)
+df %>% ggplot(aes(x=med_vec,y=..density..))  + geom_histogram(bins = 10, col = "black", fill = "grey60") +
+  geom_vline(xintercept = med.med_vec, col = "red", lwd = 1) +
+  geom_vline(xintercept = quantile(med_vec,.05), col = "blue", lwd = 1) +
+  geom_vline(xintercept = quantile(med_vec,.95), col = "blue", lwd = 1) +
+  ggtitle("Histogram of Medians") +
+  xlab("med") + 
+  theme_classic()
+```
+
+Does it surprise you that this distribution isn't normal? Explain.
+
+
+```{r exper4, exercise=TRUE, exercise.eval=FALSE}
+#explain your reasoning in words
+```
+
+
+```{r exper4-solution}
+
+#answ:  The CLT doesn't apply to medians so the sampling distribution will no longer be approximately normal. 
+```
+
+e)  Write the R code to find the 90% bootstrap CI shown below. Interpret what this CI means.
+
+
+```{r exper5, exercise=TRUE, exercise.eval=FALSE}
+
+```
+
+
+```{r exper5-solution}
+
+#answ:
+med_vec_minus_med <- med_vec - med.med_vec
+a <- quantile(med_vec_minus_med, .025)
+b <- quantile(med_vec_minus_med, .975)
+bootCI <- c(sample_med-b,sample_med-a)
+bootCI
+
+#There is a 90% chance that this CI contains the true population median.
+
+```
+
+

@@ -1,0 +1,17 @@
+---
+title: "HW#2"
+author: "Julie Song"
+date: "9/5/2018"
+output: html_document
+---
+
+#2c on HW#2: 
+
+```{r}
+n <- 20:100
+
+phi <- 2-2*pnorm((200*sqrt(392*n)) / (589.7*sqrt(393-n)))
+plot(x = n, y = phi, type = 'l')
+
+
+```

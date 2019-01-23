@@ -1,0 +1,157 @@
+---
+title: "hw6-r"
+author: "Julie Song"
+date: "10/1/2018"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r}
+library(ggplot2)
+library(ggpubr)
+
+```
+
+#6A
+```{r}
+# a) 
+2 * (1- pnorm(2.1)) #value of alpha
+```
+
+```{r}
+# b) 
+p <- seq(0.001, 0.999, by = 0.001) #random values of 0 < p < 1
+
+power <- 
+  pnorm(39.5 , 100 * p , sqrt(100 * p * (1-p))) + 
+  1 - pnorm(60.5 , 100 * p , sqrt(100 * p * (1-p)))
+
+ggplot(data.frame(power, p), aes(x = p, y = power)) + 
+  geom_line() + 
+  labs(title = 'The horizontal line is at the level alpha = 3.6%') + 
+  geom_hline(yintercept=0.036, color = "red")
+```
+
+##------------------------------------------------------------------------
+
+#6B
+
+##n = 25
+```{r}
+mu <- seq(-10, 10, by = 0.1)
+
+#n = 25 , alpha = 0.1 case: 
+
+k_25_10 <- 2 * qnorm(0.1 / 2) #value of k for alpha = .1
+
+power_25_10 <- 
+  pnorm(k_25_10, mean = mu, sd = 2) + 
+  1 - pnorm(-1 * k_25_10, mean = mu, sd = 2)
+
+
+plot_25_10 <- ggplot(data.frame('power' = power_25_10, mu), aes(x = mu, y = power)) + 
+  geom_line() + 
+  labs(title = 'Power of LRT: n = 25, alpha = 0.10')
+
+#n = 25, alpha = 0.05 case: 
+
+k_25_05 <- 2 * qnorm(0.05 / 2) #value of k for alpha = .05
+
+power_25_05 <- 
+  pnorm(k_25_05, mean = mu, sd = 2) + 
+  1 - pnorm(-1 * k_25_05, mean = mu, sd = 2
+  )
+
+plot_25_05 <- ggplot(data.frame('power' = power_25_05, mu), aes(x = mu, y = power)) + 
+  geom_line() + 
+  labs(title = 'Power of LRT: n = 25, alpha = 0.05')
+
+```
+
+##n = 100
+```{r}
+#n = 100, alpha = 0.1 case: 
+
+k_100_10 <- qnorm(0.1 / 2) #value of k for alpha = .1
+
+power_100_10 <- 
+  pnorm(k_100_10, mean = mu, sd = 1) + 
+  1 - pnorm(-1 * k_100_10, mean = mu, sd = 1)
+
+plot_100_10 <- ggplot(data.frame('power' = power_100_10, mu), aes(x = mu, y = power)) + 
+  geom_line() + 
+  labs(title = 'Power of LRT: n = 100, alpha = 0.10')
+
+#n = 100, alpha = 0.05 case: 
+
+k_100_05 <- qnorm(0.05 / 2) #value of k for alpha = .05
+
+power_100_05 <- 
+  pnorm(k_100_05, mean = mu, sd = 1) + 
+  1 - pnorm(-1 * k_100_05, mean = mu, sd = 1)
+
+plot_100_05 <- ggplot(data.frame('power' = power_100_05, mu), aes(x = mu, y = power)) + 
+  geom_line() + 
+  labs(title = 'Power of LRT: n = 100, alpha = 0.05')
+```
+
+##Plotting all Four Plots Together: 
+```{r}
+ggarrange(plot_25_10, plot_25_05, plot_100_10, plot_100_05)
+```
+
+##------------------------------------------------------------------------
+
+#6F
+```{r}
+# b)
+x <- seq(0, 1000, by = 1)
+n <- 1000
+lambda <- (0.5 ^ n) / (((x / n)^x ) * (1 - (x/n)) ^ (n-x) )
+
+ggplot(data.frame(x, lambda), aes(x = x, y = lambda)) + geom_line() #function for lambda is symmetric about n/2, which in this case is 1000 / 2
+
+# d) 
+m <- c(0, 1, 2, 8, 9, 10)
+sum(choose(10, m)) * (.5^10) # = P(X < 3) + P(X > 7) of binomial
+
+# e) 
+pbinom(40, size = 100, prob = 0.5) + 1 - pbinom(60, size = 100, prob = 0.5) #value of alpha with n = 100 and p = 0.5
+
+```
+
+##------------------------------------------------------------------------
+
+#6G
+```{r}
+# a)
+data <- c(103.768, 92.295, 100.615, 102.754, 88.602, 61.675, 88.017, 108.579, 73.003, 90.677, 71.210, 73.154, 123.086, 84.023, 82.115, 106.755, 91.052, 76.014, 89.222, 90.479)
+
+sample_mean <- mean(data)
+sample_sd <- sd(data)
+
+sample_mean
+sample_sd
+```
+
+```{r}
+# b) 
+
+#Null hypothesis: There's no difference of DL between current smokers and non-smokers (mean DL for current smokers = 100)
+
+#Alternative hypothesis: DL of current smokers is lower than those of non-smokers (mean DL for current smokers < 100)
+
+alpha <- 0.01
+n <- length(data)
+mean <- 100
+
+t_stat <- (sample_mean - mean) / (sample_sd / sqrt(n)) #use student's t-test since n < 30
+t_stat
+pt(t_stat, n - 1) # p-value
+
+#since p-value of t_stat (0.003336387) is less than alpha of 0.001, we reject the null hypothesis, which means that it's likely that DL of current smokers is lower than those of non-smokers
+
+```
+
+

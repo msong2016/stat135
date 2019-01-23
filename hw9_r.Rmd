@@ -1,0 +1,186 @@
+---
+title: "hw9_r"
+author: "Julie Song"
+date: "11/7/2018"
+output: html_document
+---
+
+```{r}
+library(ggplot2)
+library(tidyr)
+
+```
+#9A
+#### Setup: 
+
+```{r}
+
+dogs <- read.table('dogs.txt', header = FALSE)
+dogs_clean <- matrix(as.matrix(dogs), ncol = ncol(dogs), dimnames = NULL)
+
+treatment1 <- dogs_clean[1,]
+treatment2 <- dogs_clean[2,]
+treatment3 <- dogs_clean[3,]
+groups <- c(rep("T1", 10), rep("T2", 10), rep("T3", 10))
+treatments <- c(treatment1, treatment2, treatment3)
+
+df_tidy <- data.frame(groups, treatments)
+```
+
+#### Checking whether normality assumption is satisfied using qqnorm plots: 
+
+```{r}
+qqnorm(treatment1) #does not look very normal, as points in QQplot does not really lie on straight diagonal line, so it's likely that this parametric test (ANOVA) will not be as good as we want it to be. 
+qqnorm(treatment2) #does not look very normal, as points in QQplot does not really lie on straight diagonal line, so it's likely that this parametric test (ANOVA) will not be as good as we want it to be. 
+qqnorm(treatment3) # look approximately normal, as points in QQplot roughly closely lie on straight diagonal line
+```
+
+#### Plotting Boxplot to see if we want to assume same or different variances: 
+
+```{r}
+
+df_tidy %>% ggplot(aes(x=groups,y=treatments))+ geom_boxplot()
+
+#As seen by boxplot, variances look significantly different to each other; T1 seems to have smallest variance, then T2 seems to have larger variance than T1, and it seems like T3 has the largest variance out of all three treatments. Because variances look significantly different, I will not assume same variance in our F-test. 
+
+```
+
+## Parametric: ANOVA (F - Test)
+
+```{r}
+
+#H0: There is no difference in treatment effect, meaning that underlying means of the three treatment groups are same. 
+#H1: There is a difference in treatement effect, meaning that underlying means of the three treatment groups are not the same. 
+
+oneway.test(treatments ~ groups, var.equal = FALSE)
+
+#Conclusion: From this test, we see that we get F = 3.4431 and p-value = 0.05568. It is indeed larger than significance level of 0.05, so we can say that we fail to reject the null and say that it is likely that there is no difference in treatment effct. However, since p-value is very close to significance level, it's hard to say with confidence that we fail to reject the null for sure because cutoff level of 0.05 is a helpful boundary that approximately tells us to which level of alpha (type 1 error) we can tolerate, so it's not an absolute boundary.  
+
+```
+
+## Non-Parametric: Kruskal Wallis Test
+
+```{r}
+
+#H0: There is no difference in treatment effect, meaning that underlying means of the three treatment groups are same. 
+#H1: There is a difference in treatement effect, meaning that underlying means of the three treatment gruops are not the same. 
+groups <- groups <- c(rep(1 , 10), rep(2 , 10), rep(3 , 10))
+
+kruskal.test(treatments ~ groups)
+
+#Conclusion: Similar to parametric test, we get similar p-value of 0.05948 and F = 5.6442. So, consistent with parametric method, we can say that we fail to reject the null and say that it is likely taht there is no difference in treatment level. However, similar to reasoning above, since p-value is very close to significance level, it's hard to say with confidence that we fail to reject the null for sure because cutoff level of 0.05 is a helpful boundary that approximately tells us to which level of alpha (type 1 error) we can tolerate, so it's not an absolute boundary. 
+
+```
+
+#---------------------------------------------------------------
+
+#9B
+#### Setup: 
+```{r}
+
+aj <- read.table('aj.txt') #53 observations
+aj_clean <- matrix(as.matrix(aj), ncol = ncol(aj), dimnames = NULL)
+aj_mean <- mean(aj_clean)
+
+c57 <- read.table('c57.txt') #53 observations
+c57_clean <- matrix(as.matrix(c57), ncol = ncol(c57), dimnames = NULL)
+c57_mean <- mean(c57_clean)
+
+f2 <- read.table('f2.txt') #28 observations
+f2_clean <- matrix(as.matrix(f2), ncol = ncol(f2), dimnames = NULL)
+f2_mean <- mean(f2_clean)
+
+alpha <- 0.05
+```
+
+## 95% CIs: 
+
+```{r}
+
+#95% CI for aj: 
+c(aj_mean + qt( (alpha / 2) / 3, df = 53 - 1) * (sd(aj_clean) / sqrt(53)), 
+  aj_mean - qt( (alpha / 2) / 3, df = 53 - 1) * (sd(aj_clean) / sqrt(53)))
+
+#95% CI for c57: 
+c(c57_mean + qt( (alpha / 2) / 3, df = 53 - 1) * (sd(c57_clean) / sqrt(53)), 
+  c57_mean - qt( (alpha / 2) / 3, df = 53 - 1) * (sd(c57_clean) / sqrt(53)))
+
+#95% CI for f2: 
+c(f2_mean + qt( (alpha / 2) / 3, df = 28 - 1) * (sd(f2_clean) / sqrt(28)), 
+  f2_mean - qt( (alpha / 2) / 3, df = 28 - 1) * (sd(f2_clean) / sqrt(28)))
+
+# By shortcut Bonferroni, If these 3 CIs don't overlap, it is unlikely that they share the same mean. This is exactly the case in this problem, as all 3 CIs don't overlap and are very different from each other. So, it seems likely that there is a difference in means among species.
+
+```
+
+#---------------------------------------------------------------
+
+#9C
+#### Setup: 
+```{r}
+
+watch1 <- read.table('watchi.txt') #I = 9
+watch1_clean <- matrix(as.matrix(watch1), ncol = ncol(watch1), dimnames = NULL)
+
+watch2 <- read.table('watchii.txt') #I = 6
+watch2_clean <- matrix(as.matrix(watch2), ncol = ncol(watch2), dimnames = NULL)
+
+watch3 <- read.table('watchiii.txt') #I = 5
+watch3_clean <- matrix(as.matrix(watch3), ncol = ncol(watch3), dimnames = NULL)
+
+treatment1 <- watch1_clean[,1]
+treatment2 <- watch2_clean[,1]
+treatment3 <- watch3_clean[,1]
+
+groups <- c(rep("T1", 9), rep("T2", 6), rep("T3", 5))
+treatments <- c(treatment1, treatment2, treatment3)
+
+df_tidy <- data.frame(groups, treatments)
+```
+
+#### Checking whether normality assumption is satisfied using qqnorm plots: 
+
+```{r}
+qqnorm(treatment1) #does not look very normal, as points in QQplot does not really lie on straight diagonal line, so it's likely that this parametric test (ANOVA) will not be as good as we want it to be. 
+qqnorm(treatment2) #does not look very normal, as points in QQplot does not really lie on straight diagonal line, so it's likely that this parametric test (ANOVA) will not be as good as we want it to be. 
+qqnorm(treatment3) # look approximately normal, as points in QQplot roughly closely lie on straight diagonal line
+
+```
+
+#### Plotting Boxplot to see if we want to assume same or different variances: 
+
+```{r}
+
+df_tidy %>% ggplot(aes(x=groups,y=treatments))+ geom_boxplot()
+
+#As seen by boxplot, variances look significantly different to each other; T1 and T2 seem to have approximately similar variances, but T3 variance looks a lot less compared to the other two, so I will not assume same variance in the parametric F-test. 
+
+```
+
+## Parametric: ANOVA (F - Test)
+
+```{r}
+
+#H0: There is no difference for different types of watches, meaning that underlying means for three watches are same. 
+#H1: There is a difference for different types of watches, meaning that underlying means for three watches are not the same. 
+
+oneway.test(treatments ~ groups, var.equal = FALSE)
+
+#Conclusion: From this test, we see that we get F = 0.5206 and p-value = 0.6081. It is indeed highly larger than significance level of 0.05, so we fail to reject the null. We would conclude that it is likely that there is no difference for different types of watches, meaning that underlying means of the three watches are the same.  
+
+```
+
+## Non-Parametric: Kruskal Wallis Test
+
+```{r}
+
+#H0: There is no difference for different types of watches, meaning that underlying means for three watches are same. 
+#H1: There is a difference for different types of watches, meaning that underlying means for three watches are not the same.  
+
+groups <- c(rep(1 , 9), rep(2 , 6), rep(3 , 5))
+
+kruskal.test(treatments ~ groups)
+
+#Conclusion: Similar to parametric test, we will fail to reject the null because we have F = 2.1547 and p-value = 0.3405, which is clearly larger than significance level of 0.05.  We would conclude that it is likely that there is no difference for different types of watches, meaning that underlying means of the three watches are the same.So, conclusions drawn from parametric and non-parametric tests agree. 
+```
+

@@ -1,0 +1,29 @@
+---
+title: "lab3"
+author: "Julie Song"
+date: "9/7/2018"
+output: html_document
+---
+
+```{r}
+library(dplyr)
+#load beeswax as dataframe called bees
+bees <- read.csv("beeswax.txt")
+bees
+
+# examine structure of bees using command str(bees)
+str(bees)
+
+# give names of columns 
+colnames(bees)
+
+#switch order of the columns
+bees1 <- data.frame("Hydrocarbon" = bees$Hydrocarbon, "Meltingpoint" = bees$MeltingPoint)
+
+#keep just meltingpoints > 63 and hydrocarbons > 14 using filter()
+bees2 <- filter(bees1, Meltingpoint > 63 & Hydrocarbon > 14)
+
+#use mutate() to multiply every value of hydrocarbon by 2
+bees3 <- mutate(bees2, "Hydrocarbon" = Hydrocarbon * 2)
+bees3
+```

@@ -1,0 +1,205 @@
+---
+title: "HW5-R"
+author: "Julie Song"
+date: "9/24/2018"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+
+```
+
+#5A
+
+```{r}
+
+#sampling distributions of x_bar follows N(0, 10^2/25)
+
+std_dev <-  10 / sqrt(25) # this equals 2
+
+x_bar <- seq(-2 * 3, 2 * 3, by = 0.05)
+y <- dnorm(x_bar, mean = 0, sd = 10 / sqrt(25))
+plot(x_bar, y, 'l', main = 'Sampling Distirubion of X_bar N(0, 10^2/25)', xlab = 'X bar', ylab = 'Probability Density')
+```
+
+```{r}
+#sampling distirbutions of sigma hat squared found on paper, so it follows Gamma(12, 1/8)
+
+plot(seq(0, 1000, by = 1), dgamma(seq(0, 1000, by = 1), shape = 12, rate = 1/8), 'l', main = 'Sampling Distribution of Sgma Hat, Gamma (12, 1/8)', xlab = 'Sigma Hat', ylab = 'Probability Density' )
+
+```
+
+#-----------------------
+
+#5D
+```{r}
+#a)
+
+a <- c(5.3299 , 4.2537 , 3.1502 , 3.7032 , 1.6070 , 6.3923 , 3.1181 , 6.5941 , 3.5281 , 4.7433 , 0.1077 , 1.5977 , 5.4920 , 1.7220 , 4.1547 , 2.2799)
+miu <- mean(a) #guess for mean
+miu
+sigma_sq <- var(a) #guess for variance
+sigma_sq
+#since sd function in r uses denominator n-1, I need to multiply it by sqrt(n-1 / n) to get population variance 
+
+```
+
+```{r}
+# b) 90% CI for mean and variance
+
+#CI mean
+
+t_n_minus_1 <- abs(qt(c(.05), df=length(a)-1))
+
+ci_mean <- c(
+  miu - (t_n_minus_1 * sd(a) / sqrt(length(a))) , 
+  miu + (t_n_minus_1 * sd(a) / sqrt(length(a)))
+  )
+
+ci_mean
+
+#CI variance
+
+chi_n_minus_1 <- qchisq(c(0.05, 0.95), lower.tail = FALSE, df=length(a)-1)
+
+ci_variance <- c((length(a) * sigma_sq) / chi_n_minus_1[1], (length(a) * sigma_sq) / chi_n_minus_1[2])
+
+ci_variance
+
+```
+
+```{r}
+# part c) 90% CI for sigma
+sqrt(ci_variance)
+
+```
+
+```{r}
+# How much larger a sample do you think you would need to halve the length of the CI for mean?
+
+(t_n_minus_1 * sd(a) / sqrt(length(a))) # half of original length of CI for mean
+(t_n_minus_1 * sd(a) / (sqrt(4*length(a)))) #half of that above
+
+#So, sample size should be quadrupled. 
+```
+
+
+#-----------------------
+
+#5G
+```{r}
+#Clean up data
+
+#Read the data into R
+scores <- read.delim('data.scores.txt', header = TRUE, sep = "", col.names = c('final', 'midterm'))
+
+# keep only the rows where both entries are positive
+scores <- filter(scores, final > 0 & midterm > 0)
+
+#Multiply all the midterm scores by 2 so that they are on the same scale as the final
+scores <- mutate(scores, midterm = midterm * 2)
+
+#put them in chronological order: midterm scores in Col 1, final scores in Col 2. 
+scores <- data.frame('midterm' = scores$midterm, 'final' = scores$final)
+
+```
+
+
+```{r}
+#a) Draw the histograms of the two variables
+#histogram for midterm grades
+hist_m <- ggplot(scores, aes(x = midterm)) + 
+  geom_histogram(binwidth = 1)
+hist_m
+```
+
+```{r}
+#histogram for final grades
+hist_f <- ggplot(scores, aes(x = final)) + geom_histogram(binwidth = 1)
+hist_f
+
+```
+
+
+```{r}
+#b) On a single graph, draw boxplots of the midterm scores and final scores. Comment on what the boxplot tells you about the center, spread, and skewness of the distributions, and compare with the histograms in part (a).
+ggplot(gather(scores), aes(x = key, y = value)) + 
+  geom_boxplot() + 
+  labs(title =  "Boxplots of Midterm and Final Scores", x = 'Type of Test', y = 'Scores')
+
+#midterm: 
+  #The boxplot for midterm shows that the center is around 24. The spread of the data is shown by quartiles, 50% of the data are concentrated between first quartile (25 percentile) of 18 and third quartile (75 percentile) of 32. This boxplot demonstrates that the distribution of midterm scores is slightly left skewed, which coincides with the slight left-skewed shape of histogram for midterm above. 
+
+#final: 
+  #The boxplot for midterm shows that the center is around 28. The spread of the data is shown by quartiles, 50% af the data are concentrated between first quartile (25 percentile) of 22 and third quartile (75 percentile) of 32. This boxplot demonstrates that the distribution of midterm scores is more left skewed compared to that of midterm, and this also matches with left skewed distribution of final scores demonstrated above with histogram. 
+
+```
+
+#5H
+```{r}
+#a) Generate an i.i.d. sample of size 500 from the normal distribution with mean 10 and SD 3. Use qqnorm to plot the quantiles of your sample against the quantiles of the standard normal. This is called a normal quantile plot. Does the plot look linear?
+
+
+#generate iid sample of size 500 
+iid_500 <- rnorm(500, mean = 10, sd = 3)
+
+#use qqnorm to plot quantiles of sample against quantiles of the standard normal
+qqnorm(iid_500)
+
+#this normal quantile plot looks approxmiately linear in shape. 
+
+
+#b)  Now make the normal quanitle plot of the final scores and comment on linearity. Compare with the histogram in Problem 5G.
+qqnorm(scores$final)
+
+#comparing with histogram in 5G, this agress with what histogram demonstrates. The normal quantile plot of the final scores is not linear, meaning that it's not standard normal. Because it's not linear, it agrees with the histogram in 5G which is left skewed. 
+
+```
+
+#-------------------------
+#5I
+
+```{r}
+stem(scores$final, scale = 1) #best summarizes data
+stem(scores$final, scale = 0.5)
+stem(scores$final, scale = 2)
+
+#The first one with scale = 1 provides best summary of the data because if scale is 0.5, plot length is too short, and if scale is 2, then plot length is too long, and it provides too much info, giving more noises and does not provide the best summary of the data. 
+
+```
+
+#----------------------------
+
+#5J
+```{r}
+#a) plot final scores (vertical axis) versus the midterm scores (horizontal axis) and draw x = y line
+
+ggplot(scores, aes(x = midterm, y = final)) + geom_point() + stat_function(fun = function(x){y = x})
+
+#By eyeballing the scatter plot, more than 50% are above the x= y line, so more than 50% of students benefitted from this policy. 
+
+```
+
+
+```{r}
+#b) Use R to count how many students gained from the grading scheme, and check that this number is consistent with your eyeballed estimate in (a).
+
+nrow(filter(scores, midterm < final)) / nrow(scores) # percent who gained from the grading scheme was greater than 50%, which is about 59.3%
+
+```
+
+```{r}
+#c) Would you use the line you drew in part (a)? If not, would the line you use be flatter (smaller slope) or steeper than the line in (a)? 
+
+#I would use flatter line because you would expect the best fit line to be somewhere around averge so that 50% of the data is above and below the line because best guess we always have is the mean. 
+
+```
+
+
+
+

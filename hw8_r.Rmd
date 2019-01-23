@@ -1,0 +1,336 @@
+---
+title: "hw8_r"
+author: "Julie Song"
+date: "10/30/2018"
+output: html_document
+---
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+```
+
+
+#8A
+```{r}
+
+#Test of independence: 
+#H0: There is no relationship between grade and major
+#H1: There is a relationship between grade and major
+
+major_grade <- matrix(
+  data = c(8, 15, 13, 14, 19, 15, 15, 4, 7, 3, 1, 4), 
+  nrow = 4, ncol = 3, byrow = TRUE)
+
+chisq.test(major_grade) #x-squared with degrees of freedom of 6 = 12.183, p-value = 0.058
+
+#conclusion: if our significance level is alpha = 0.05, we will fail to rejct the null since 0.058 > 0.05. Thus, it seems likely that there is no relationship between grade and major. 
+
+#assumptions of test of independence: 
+  # 2 or more multinomial
+  # draws are independent
+  # every ticket is cross classification of 2 or more multinomials with exactly 1 cell checked off
+  # at most 20% of expected cells are < 5
+
+#But in this problem, some of the assumptions were not quite met:
+  # 1) In expected table below, 3 out of 12 cells (25%) have expected counts less than 5, so this approximation will be not as good because it won't quite follow normal distribution
+chisq.test(major_grade)$expected
+
+  # 2) We cannot guarantee that these students are independent of each other in terms of grades; there could be double majors, so grade of students in different major will not be exactly independent. The grades could also be assigned based on curve, which will create dependency among grades of students, thus going against the assumption that draws are independent
+
+```
+
+#--------------------------------------------------
+
+#8B
+```{r}
+
+#This is test of independence because it it randomized double-blind experiment, meaning that neither researchers nor patients knew that which person were given what particular drug and these patients were collected at random from population. 
+
+#H0: The drug is related to incidence of nausea
+#H1: The drug is not related to incidence of nausea
+
+#creating matrix with two multinomials (number of nausea incidence and number of no nausea incidence): 
+drug_nausea <- matrix(c(165 - 95, 95, 152 - 52, 52, 85 - 52, 52, 67 - 35, 35, 85 - 37, 37), 
+                      nrow = 5, ncol = 2, byrow = TRUE) 
+
+#conducting test of independence: 
+chisq.test(drug_nausea) #x-squared: 24.502, p-value = 6.334e-05 (extremely small)
+
+#conclusion: Due to extremely small p-value, we reject the null and conlcude that it seems likely that drug is related to incidence of nausea. 
+
+```
+
+```{r}
+
+#compare chlorpromazine and to placebo: 
+
+#H0: there is no difference between nausea incidence for placebo and that for chlorpramazine
+#H1: there is a difference between proportion of nausea incidence for placebo and that for chlorpramazine
+
+cp<- drug_nausea[1:2, 1:2]
+
+chisq.test(cp) #x-squared = 16.442, df = 1, p-value = 5.017e-05 (extremely smal lp-value)
+
+#conclusion: Due to extremely small p-value, we reject the null and conlcude that it seems likely that chlorpromazine is related to incidence of nausea. 
+
+```
+
+#--------------------------------------------------
+
+#8D b)
+```{r}
+
+# find P(Xi > Yj and Xr > Yj)
+set.seed(248)
+fun <- function() {
+  a <- rnorm(1)
+  b <- rnorm(2, mean = 1)
+  p <- prod(a > b)
+}
+
+vec <- replicate(10000, fun())
+mean(vec) #0.1129
+
+#So,cov(I(Xi > Yj), I(Xr > Yj)) is approximately:
+mean(vec) - (0.24^2)
+
+#Summing all four cases, Var(Tx) equals (0.1824 * n^2) + (0.1106 * n^2 * (n-1))
+
+```
+
+#--------------------------------------------------
+
+#8E
+##a) 
+```{r}
+#H0: means of the two samples are not unusually different. 
+#H1: means of the two samples are unusually different. 
+
+data11.29 <- read.table('/Users/msong16/Desktop/11.29.txt', header = TRUE)
+
+#Under the null: 
+
+sample_diff <- c() 
+
+set.seed(124)
+
+for(i in 1:1000) {
+  sample_mb <- sum(sample(data11.29$heat.change, size = 8, replace = FALSE)) #sampling method b
+  sample_diff[i] <- ( (sum(data11.29$heat.change) - sample_mb) / 13 ) - ( sample_mb / 8) #sampling differences under the null to compare with observed difference
+}
+
+#Calculating observed difference: 
+method_a <- data11.29 %>%
+  filter(machine == '1') %>%
+  select(heat.change)
+
+method_b <- data11.29 %>%
+  filter(machine == '2') %>%
+  select(heat.change)
+
+obs_diff <- mean(method_a[,1]) - mean(method_b[,1])
+obs_diff
+
+#visualizing to see where observed difference lie compared to 1000 sampled differences under the null
+
+ggplot(as.data.frame(sample_diff), aes(x = sample_diff)) + geom_histogram() + geom_vline(xintercept = obs_diff, color = 'red') + labs(title = 'Histogram of Sample Differences between Mean of Method A and Mean of Method B', x = 'Sample Differences')
+
+#Because it was sampled with n = 1000, the graph looks approximately normal by CLT. The red vertical line represents observed difference of 0.04201923. Visually, the observed difference looks quite extreme compared to sample differences under the null. To reject or fail to reject the null, we need to find probability of sample differences that are same or more extreme as observed values. 
+
+#approximating p-value: 
+sum(sample_diff >= obs_diff) / length(sample_diff) 
+#number of sample differences under the null that are greater than or equal to observed difference is extremely small. In this particular sample, only 6 out of 1000 sample diferences had a value that is greater or equal to observed differences. Since this p-value (0.006) is extremely small and smaller than regular significance level of alpha = 0.04, we will reject the null. Thus, we will conclude that it is highly likely that particular assignment we have observed seem to be unusual in the sense that mean of the two samples are unually different between method A and method B. 
+
+#Example A has p-valule of: 
+1 - pt(3.33, df = 19) #0.001759569
+#compared to p-value from example A, approximate p-value for simulations calculated above (0.006) are both less than significance level 0.05, so we would reject the null.  
+
+```
+
+##b) 
+```{r}
+#It is non-parametric: this method doesn't assume distribution. 
+
+```
+
+#--------------------------------------------------
+
+#8F
+
+```{r}
+
+data11.40 <- read.table('/Users/msong16/Desktop/11.40.txt', header = TRUE)
+
+df_tidy <- data11.40 %>% gather(key = type, value = value, 'present', 'absent' )
+
+ggplot(data = as.data.frame(df_tidy), aes(x = type, y = value)) + geom_dotplot(binaxis = "y", stackdir = "center") + labs(title = 'Parallel Dotplot Illustrating Weight Gains of Controls and That of Treatment Group')
+
+#Display the data graphically with parallel dotplots. (Draw two parallel number lines and put dots on one corresponding to the weight gains of the controls and on the other at points corresponding to the gains of the treatment group.)
+
+```
+
+#--------------------------------------------------
+
+#8G
+##b) 
+```{r}
+
+#The data doesn't seem to be paired. Since mice wasn't matched for particular features, and each pair contains one from control and one from treatment, the data does not seem to be paired and samples seem to be independent. 
+
+#Find a 95% confidence interval for the difference of the mean weight gains.
+
+ncol(data11.40) * nrow(data11.40) #sample = 20, which is relatively small, so we use t-statistic, assuming that sample is drawn from normal distribution and both samples are independent
+```
+
+```{r}
+
+#95% CI: 
+test_stat <- mean(data11.40$present) - mean(data11.40$absent)
+
+#We can use pooled variance with assumption that SD of two samples are same. However, we can see from part a of this problem from dotplot that the distribution of each samples seem different: The spread of data points for treatment (present) is a lot wider than the spread of data points for control (absent). So, we have to use variance of differences that doesn't necessarily assume that two variacnes are same. 
+
+sx_2 <- var(data11.40$present)
+sy_2 <- var(data11.40$absent)
+
+diff_var <- (sx_2 / 10) + (sy_2 / 10)
+
+diff_df <- (diff_var^2) / ( ((sx_2 / 10)^2 / 9) + ((sy_2 / 10)^2 / 9) )
+
+lower <- test_stat + qt(0.025, diff_df) * sqrt(diff_var)
+upper <- test_stat - qt(0.025, diff_df) * sqrt(diff_var)
+
+c(lower, upper) #95% CI = (-12.173973  -3.366027)
+
+
+```
+
+##c) 
+
+```{r}
+
+#H0: There is no difference (difference is 0) in weight gain between control and treatment group, meaning that magnetic field has no effect on weight gain 
+#H1: There is a difference in weight gain between control and treatment group. 
+
+#Using results from (b), 0 is not contained in the confidence interval, which is the acceptance region for null. So, we would reject the null and it seems likely that there is a difference in weight gain between control and treatment group. 
+
+#to get p-value: 
+t <- test_stat / sqrt(diff_var)
+t
+2 * pt(t, 14) #round diff_df to nearest integer = 14
+
+#small p-value, 0.002 < 0.05 confirms that we are rejecting the null and it seems likely that there is a difference in weight gain between control and treatment group. 
+```
+
+#--------------------------------------------------
+
+#8H
+```{r}
+#use Mann-Whitney test 
+#Assumptions of this test: 
+  # non-parametric (do not assume that data follow any particular distribution form)
+  # with replacement (samples are independent)
+
+
+#H0: There is no difference (difference is 0) in weight gain between control and treatment group, meaning that magnetic field has no effect on weight gain 
+#H1: There is a difference in weight gain between control and treatment group. 
+
+wilcox.test(data11.40$present, data11.40$absent, alternative = 'two.sided')
+
+#This gives p-value of 0.002879, which is less than significance level of alpha = 0.05, so same as conclusion reached above using t-test, we will reject the null and conclude that it is likely that magnetic field has an effect on weight gain and there is a difference in weight gain between control and treatment group. 
+
+```
+
+#--------------------------------------------------
+
+#8I
+##a) 
+```{r}
+
+data.bodytemp <- read.table('/Users/msong16/Desktop/bodytemp.txt', header = TRUE)
+
+males <- data.bodytemp %>% filter(gender == 1) %>% select(temperature)
+
+females <- data.bodytemp %>% filter(gender == 2) %>% select(temperature)
+
+#H0: There is no difference in body temperature between males and females. 
+#H1: There is a difference in body temperature between males and females
+
+#assumptions of test of independence: 
+  # 2 or more multinomial
+  # draws are independent
+  # every ticket is cross classification of 2 or more multinomials with exactly 1 cell checked off
+  # at most 20% of expected cells are < 5
+
+fm_obs <- mean(males$temperature) - mean(females$temperature)
+
+temp_m_var <- var(males$temperature)
+
+temp_f_var <- var(females$temperature)
+
+
+temp_pooled_var <- (((65-1) * temp_m_var) + ((65-1) * temp_f_var )) / 128
+
+diff_mf_se <- sqrt(temp_pooled_var * 2 * (1/65))
+
+c(fm_obs + qnorm(0.025) * diff_mf_se, fm_obs - qnorm(0.025) * diff_mf_se) #CI = (-0.53727195 -0.04118958)
+
+```
+
+##b) 
+```{r}
+males_rate <- data.bodytemp %>% filter(gender == 1) %>% select(rate)
+
+females_rate <- data.bodytemp %>% filter(gender == 2) %>% select(rate)
+
+#H0: There is no difference in heart rate between males and females. 
+#H1: There is a difference in heart rate between males and females. 
+
+#assumptions of test of independence: 
+  # 2 or more multinomial
+  # draws are independent
+  # every ticket is cross classification of 2 or more multinomials with exactly 1 cell checked off
+  # at most 20% of expected cells are < 5
+
+rate_obs <- mean(males_rate$rate) - mean(females_rate$rate)
+
+rate_m_var <- var(males_rate$rate)
+
+rate_f_var <- var(females_rate$rate)
+
+rate_pooled_var <- (((65-1) * rate_m_var) + ((65-1) * rate_f_var )) / 128
+
+diff_rate_se <- sqrt(rate_pooled_var * 2 * (1/65))
+
+c (rate_obs + qnorm(0.025) * diff_rate_se, rate_obs - qnorm(0.025) * diff_rate_se) #CI = (-3.218233, 1.649002)
+
+```
+
+```{r}
+#Parametric tests are done in a and b, where it assumed that it follows approximately normal distribution 
+
+#nonparametric test using Man - Whitney test which makes no assumptions about the distribution of sample and assumes that samples are independent: 
+
+#H0: There is no difference in body temperature between males and females. 
+#H1: There is a difference in body temperature between males and females
+
+wilcox.test(males$temperature, females$temperature, alternative = 'two.sided')
+
+#Conclusion: We reject the null with significance level alpha = 0.05 since p-value is 0.02676 > 0.05. Thus, we conclude that it is likely that there is a difference in body temperature between males and females. 
+```
+
+
+```{r}
+
+#H0: There is no difference in heart rate between males and females. 
+#H1: There is a difference in heart rate between males and females.
+
+wilcox.test(males_rate$rate, females_rate$rate, alternative = 'two.sided')
+
+#Conclusion: We fail to reject the null since p-value of 0.3898 is > significance level alpha of 0.05. Thus, we conclude that we don't have enough evidence to say that there is a difference in body temperature between males and females. 
+
+
+```
+
+

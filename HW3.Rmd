@@ -1,0 +1,153 @@
+---
+title: "HW3"
+author: "Julie Song"
+date: "9/12/2018"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+#3a
+```{r}
+n <- seq(0.5, 2.5, by = 0.5)
+
+2 * (1-pnorm(n/1.04))
+```
+
+#3b
+```{r}
+e <- exp(1)
+n <- 0:13
+frequency <- c(14, 30, 36, 68, 43, 43, 30, 14, 10, 6, 4, 1, 1, 0)
+observed <- n * frequency # to get observed values
+lambda <- sum(observed) / 300 #to get lambda required for poisson 
+p <- ( (e^(-lambda)) * (lambda ^ n) ) / factorial(n) #p(x) for poisson
+expected <- p * 300 #to get expected values for each number arrivals in an interval
+expected
+
+```
+
+#3f
+```{r}
+library(ggplot2)
+pop <- data.frame(sid = c(3, 0, 3, 2, 1, 0, 5, 2, 7, 2))
+
+#draw the histogram of the population
+pop_hist <- ggplot(pop, aes(x = sid)) + geom_histogram(aes(y = ..density..), binwidth = 1) +   
+  labs(title = " Histogram of SID Population", x = "SID", y = "Frequency")
+
+
+pop_hist
+
+#find mean
+pop_mean <- mean(pop$sid)
+
+#because R calculates sd using denominator n-1, 
+#to get the population sd, I need to multiply by 
+#sqrt(n-1 / n) where n = 10 because population has 10 digits
+pop_sd <- sd(pop$sid) * sqrt(9/10) 
+
+
+pop_mean
+pop_sd
+
+```
+
+#3g
+```{r}
+#take a sample of 400 with replacement
+
+expectation <- pop_mean #expectation of sample mean is population mean
+expectation
+
+SE <- pop_sd / sqrt(400) #standard error = population sd / sqrt(n)
+SE 
+
+plot_3g <- ggplot(data.frame(x = c(expectation - 3*SE, expectation + 3*SE )), aes(x)) + 
+  stat_function(fun = dnorm, args = list(mean = expectation, sd = SE)) + 
+  labs(title = "Normal Distribution of Sample Means", x = "Sample Means", y = "Frequency")
+
+plot_3g
+
+
+```
+
+#3h
+```{r}
+
+mean100 <- 0
+se100 <- 0
+for(i in 1:100) {
+  mean100[i] <- mean(sample(pop$sid, size = 400, replace = TRUE))
+}
+
+sample100 <- data.frame(hundred_sample_mean = mean100)
+
+plot_3h <- ggplot(sample100, aes(x = hundred_sample_mean)) + 
+  geom_histogram(binwidth = 0.01) + 
+  stat_function(fun = dnorm, args = list(mean = expectation, sd = SE)) + 
+  labs(title = " Histogram of 100 Sample Means", x = "Sample Means", y = "Frequency")
+
+
+plot_3h
+
+```
+
+
+#3I
+```{r}
+
+
+CI <- 0
+
+for(i in 1:100) {
+  CI[(2*i) - 1] <- mean100[i] - qnorm(0.975) * SE #left side of CI
+  CI[(2*i)] <- mean100[i] + qnorm(0.975) * SE #right side of CI
+}
+
+
+#number of intervals contain population mean: 
+
+count <- 0
+for(i in 1:100) {
+  if(expectation >= CI[(2*i)-1] & expectation <= CI[(2*i)]) {
+    count[i] <- 1
+  } else {
+    count[i] <- 0
+  } 
+}
+
+num_interval <- sum(count) 
+num_interval
+
+```
+
+
+#3J
+```{r}
+
+# G ~ Bin(0.95, 100) 
+n <- 100
+p <- 0.95
+g_expectation <- n * p
+g_expectation #E(G)
+
+g_se <- sqrt((n*p) * (1-p))
+g_se #SE(G) is sd of bin(0.95, 100)
+
+#Here, n = 100 is large, and since p is not close to zero, 
+#empirical histogram of this distribution will look like a normal approximation by CLT.
+
+plot_3j <- ggplot(data.frame(x = c(g_expectation - 3*g_se, g_expectation + 3*g_se )), aes(x)) + 
+  stat_function(fun = dnorm, args = list(mean = g_expectation, sd = g_se)) + 
+  geom_vline(xintercept = num_interval, color = "red") +   
+  labs(title = "Empirical Histogram of G", x = "G", y = "Frequency")
+
+
+plot_3j
+
+#The mark is not in the surprising place because the value from the sample is near E(G), 
+#which is what we would expect. 
+```
+
+

@@ -1,0 +1,240 @@
+---
+title: "HW4-R"
+author: "Julie Song"
+date: "9/16/2018"
+output:
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+library(ggplot2)
+
+```
+
+#4F
+```{r}
+#true values of a and lambda 
+true_r <- 3
+true_r
+true_lambda <- 1.5
+true_lambda
+```
+
+```{r}
+#generate iid sample of size 200 from gamma density 
+
+gamma_200 <- data.frame(gamma = rgamma(1:200, shape = true_r, rate = true_lambda))
+
+#histogram of your sample with the true gamma density superimposed
+ggplot(data = gamma_200, aes(x = gamma)) + 
+  stat_function(fun= dgamma, args=list(shape=true_r, rate=true_lambda)) + 
+  geom_histogram(aes(y = ..density..), binwidth = 0.1) + 
+  labs(title = 'Histogram of 200 Sample with True Gamma Density', x = "x", y= 'Density')
+
+```
+
+#4G
+```{r}
+#mom estimates for r and lambda are calculated on paper
+
+x_bar <- mean(gamma_200$gamma)
+x_var <- mean((gamma_200$gamma - x_bar)^2)
+
+mom_lambda <- x_bar / x_var
+mom_lambda
+
+mom_r <- mom_lambda * x_bar
+mom_r
+```
+
+```{r}
+#generate 1000 independent samples, each with 200 iid obervations from gamma
+
+mom_lambda1000 <- 0
+mom_r1000 <- 0
+for (i in 1:1000) {
+  sample <- rgamma(1:200, shape = true_r, rate = true_lambda)
+  x_bar1000 <- mean(sample)
+  x_var1000 <- mean((sample - x_bar1000)^2)
+  mom_lambda1000[i] <- x_bar1000 / x_var1000
+  mom_r1000[i] <- mom_lambda1000[i] * x_bar1000
+}
+```
+
+```{r}
+#draw histogram of distribution of r and comment on the shapes of the distribution
+
+r_dataframe <- data.frame(r = mom_r1000)
+
+ggplot(data = r_dataframe, aes(x = mom_r1000)) + 
+  geom_histogram(binwidth = 0.02) + 
+  labs(title = 'Histogram of 1000 Simulated MOM Estimates of r',
+       x = 'MOM Estimates of r', y = 'Count') +
+  geom_vline(xintercept = true_r, color = "red")  
+
+#The histogram looks roughly normal by CLT, and it is centered around a value 
+#that's relatively close to true value of r indicated with red
+```
+
+```{r}
+#draw histogram of distribution of lambda and comment on the shapes of the distribution
+
+lambda_dataframe <- data.frame(lambda = mom_lambda1000)
+
+ggplot(data = lambda_dataframe, aes(x = mom_lambda1000)) + 
+  geom_histogram(binwidth = 0.02) + 
+  labs(title = 'Histogram of 1000 Simulated MOM Estimates of Lambda', 
+       x = 'MOM Estimates of Lambda', y = 'Count') +
+  geom_vline(xintercept = true_lambda, color = "blue")  
+
+#The histogram looks roughly normal by CLT, and it is centered around 
+#a value that's relatively close to true value of r indicated with blue
+
+```
+
+```{r}
+#calculate approximate SE of each estimate
+
+se_r <- sqrt( mean((mom_r1000 - mean(mom_r1000))^2) )
+se_lambda <- sqrt( mean((mom_lambda1000 - mean(mom_lambda1000))^2) )
+se_r
+se_lambda
+
+#Is either of them in a surprising place? 
+#they are not in a surpprising place because we would expect mom 
+#estimates to be somewhere close to the true values of r and lambda
+
+```
+
+#4H
+```{r}
+#pick 2 estimates of r
+
+r5 <- quantile(mom_r1000, .05) #5th percentile of distribution of estimates of r
+r5
+
+r95 <- quantile(mom_r1000, .95) #95th percentile of distribution of estimates of r
+r95
+
+ggplot(data = gamma_200, aes(x = gamma)) + 
+  stat_function(fun= dgamma, 
+                args=list(shape=true_r, rate=true_lambda), color = 'green') + 
+  geom_histogram(aes(y = ..density..), binwidth = 0.1) + 
+  stat_function(fun= dgamma, args=list(shape=r5, rate=mom_lambda), color = 'red') +
+  stat_function(fun= dgamma, args=list(shape=r95, rate=mom_lambda), color = 'blue') +
+  labs(title = 'Histogram of Original Sample with Three Gamma Density Distributions',
+       x = 'x', y = 'density')
+  
+# This is what I would expect because all three gamma curves are 
+#roughly similar to histogram of the original sample. 
+
+```
+
+#4I
+```{r}
+#nonparametric bootstrap
+
+gamma_original <- rgamma(1:200, shape = true_r, rate = true_lambda) #original sample
+
+mom_r_resample <- 0
+mom_lambda_resample <- 0
+
+for (i in 1:1000) {
+  sample <- sample(gamma_original, size = 200, replace = TRUE) 
+  #with replacement to make it independent draws from the original sample
+  x_bar_resample <- mean(sample)
+  x_var_resample <- mean((sample - x_bar_resample)^2)
+  mom_lambda_resample[i] <- x_bar_resample / x_var_resample
+  mom_r_resample[i] <- mom_lambda_resample[i] * x_bar_resample
+}
+
+```
+
+```{r}
+#Histogram of mom estimates for r and comment about it
+
+r_resample_dataframe <- data.frame(r = mom_r_resample)
+
+ggplot(data = r_resample_dataframe, aes(x = r)) + 
+  geom_histogram(binwidth = 0.02) + 
+  labs(title = 'Histogram of 1000 Simulated MOM Estimates of r', 
+       x = 'MOM Estimates of r', y = 'Count') +
+  geom_vline(xintercept = true_r, color = "red")  
+
+# Again, nonparametric mom estimates of r are also pretty near the 
+#true value of r as seen by this histogram that looks roughly a normal curve by CLT. 
+```
+
+```{r}
+#Histogram of mom estimates of labmda and comment about it
+
+lambda_resample_dataframe <- data.frame(lambda = mom_lambda_resample)
+
+ggplot(data = lambda_resample_dataframe, aes(x = lambda)) + 
+  geom_histogram(binwidth = 0.02) + 
+  labs(title = 'Histogram of 1000 Simulated MOM Estimates of Lambda', 
+       x = 'MOM Estimates of Lambda', y = 'Count') +
+  geom_vline(xintercept = true_lambda, color = "blue")  
+
+# Again, nonparametric mom estimates of rlambdaare also pretty near the true 
+#value of lambda as seen by this histogram that looks roughly a normal curve by CLT. 
+```
+
+```{r}
+#Calculate approximate SE of each estimate
+
+se_r_resample <- sqrt( var(mom_r_resample) )
+se_lambda_resample <- sqrt( var(mom_lambda_resample) )
+se_r_resample
+se_lambda_resample
+```
+
+```{r}
+#Compare with distributions in 4H
+#Compare with distributions in 4H, mom estimates for 4I are quite close 
+#to true value of r and lambda as well, as seen by histograms above. 
+#This shows that both parametric and nonparametric estimates are reasonable 
+#estimates in this case to estimate the true values of r and lambda. 
+#Comparing values of avg of mom estimates of parametric and nonparamteric below, 
+#they are very similar and close to true values of r and lambda, as seen below: 
+
+
+#Avg of parametric and non-parametric lambas
+#difference between true value of lambda and avg parametric mom estimate of lambda
+abs(true_lambda - mean(mom_lambda1000)) 
+# difference between true value of lambda and avg non-parametric mom estimate of lambda
+abs(true_lambda - mean(mom_lambda_resample)) 
+
+
+#Avg of parametric and non-parametric r
+#difference between true value of r and avg parametric mom estimate of r
+abs(true_r - mean(mom_r1000)) 
+# difference between true value of r and avg non-parametric mom estimate of r
+abs(true_r - mean(mom_r_resample)) 
+
+#overall, as seen by difference above, on average, mom estimates under 
+#parametric bootstrap seems to produce estimates that are closer to the 
+#true value of r and lambda compared to that from non-parametric bootstrap. 
+```
+
+#4J
+```{r}
+
+fun <-  function(para, x) {
+    r <-  para[1]
+    lambda <-  para[2]
+    -sum(r * log(lambda) + (r - 1) * log(x) - lambda * x - log(gamma(r)))
+}
+
+mle <-  optim(par = c(mom_r, mom_lambda),  fn = fun, x=gamma_200$gamma) #optimize l(r, lambda)
+
+r.mle <-  mle$par[1]
+lambda.mle <-  mle$par[2]
+r.mle
+lambda.mle
+
+```
+
+
+
+

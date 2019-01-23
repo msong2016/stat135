@@ -1,0 +1,200 @@
+---
+title: "HW7-R"
+author: "Julie Song"
+date: "10/18/2018"
+output: html_document
+---
+
+```{r}
+library(ggplot2)
+
+```
+
+#7A
+```{r}
+
+#H0: This follows a multinomial distribution with cell probabilities according to genetic theory. 
+#H1: This follows a multinomial distriution with different cell probabilities. 
+n <- c(1997, 906, 904, 32)
+t_mle <- 0.0357 #calculation demonstrated by hand
+p_expected_genetic <- c(0.25 * (2 + t_mle), 0.25 * (1 - t_mle),  0.25 * (1 - t_mle), 0.25 * t_mle)
+chisq.test(n, p = p_expected_genetic) #x_squared with d.f = 3 is: X^2 = 2.0155 --> but this should be degrees of freedom = 2 because degrees of freedom = number of cells - 1 - number of estimated parameter, so correct degrees of freedom is: 4 - 1 - 1 = 2
+
+1 - pchisq(2.0155, df = 2) #p-value = 0.365, which is approximately 36.5%, so fail to reject the null
+
+#Conclusion: Since 36.5% > 5%, wXe fail to reject the null and thus conclude that it seems likely that this follows a multinomial distribution with cell probabilities according to genetic theory. 
+
+```
+
+#--------------------------------------------------------------------------------------------
+
+#7B
+```{r}
+
+#H0: Male suicide numbers don't show seasonality
+#H1: Male suicide numbers do show seasonality
+
+male_observed <- c(3755 ,3251, 3777, 3706, 3717 ,3660, 3669, 3626, 3481, 3590, 3605, 3392)
+p_expected_suicide <- rep(1/12, 12)
+chisq.test(male_observed, p = p_expected_suicide) #x-squared = 74.56, p-value = 1.646e-11 (extremely small)
+
+#Conclusion: We reject the null: it seems likely that male suicide numbers do demonstrate seasonality
+
+```
+
+```{r}
+
+#H0: Female suicide numbers don't show seasonality
+#H1: Female suicide numbers do show seasonality
+
+female_observed <- c(1362, 1244, 1496, 1452, 1448, 1376, 1370, 1301, 1337, 1351, 1416, 1226)
+p_expected_suicide <- rep(1/12, 12)
+chisq.test(female_observed, p = p_expected_suicide) #x-squared: 53.786, p-value = 1.292e-07 (extremely small)
+
+#Conclusion: We reject the null: it seems likely that female suicide numbers do deomonstrate seasonality
+
+```
+
+#--------------------------------------------------------------------------------------------
+
+#7C
+
+##(a) 
+
+```{r}
+
+#H0: marital status and employment status are independent
+#H1: marital status and employment status are dependent
+
+observed <- matrix( data = c(790, 98, 209, 56, 11, 27, 21, 7, 12), nrow = 3, ncol = 3, byrow = TRUE)
+chisq.test(observed) #x-squared = 13.369, df = 4, p-value = 0.009609
+#If we choose significance level as alpha = 0.01, still 0.009609 < 0.01, so we reject the null
+
+#Conclusion: It is likely that marital status and employment status are dependent. 
+
+#Suggest some ways in which they apprea to be dependent: when people are married, people are more likely to have a job because they have to support the family
+
+#This is giving us a warning because one of the assumptions of test of independence is that at most 20% of expeced cells are < 5. This is not the case for this one because only cell that is < 5 is 3.769293 and this is only 1 out of 9 cells, so 1/9 = 11%. 
+
+
+```
+
+##(b)
+
+```{r}
+#expected counts under the null
+expected <- chisq.test(observed)$expected
+expected
+
+#using null to justify the calculation done in paper
+
+
+```
+
+#--------------------------------------------------------------------------------------------
+
+#7D
+
+```{r}
+
+sum(( (observed - expected) ^ 2 ) / expected) # = 13.36855: this is same as one calculated above, which is 13.369
+
+2 * sum( observed * log(observed / expected) ) # = 12.38856: this is not same as one calculated above, but this Pearson approximation is quite close to the one above. 
+
+```
+
+#--------------------------------------------------------------------------------------------
+
+#7E
+
+```{r}
+#95% CI for proportion of unemployed men among all U.S men in 2005
+#Let Y represent binomial distribution of each individual unemployed men, then proportion of unemployed men are Xbar. 
+
+#CI = y_bar +/ z(alpha / 2) * SE(y_bar)
+
+n <- sum(observed)  #n = 1231, which is large enough to converge to normal distribution by CLT, thus we can apply confidence interval since we can assume normal distribution
+
+unemployed <- sum(observed[2,])
+ybar <- unemployed / n
+sigma_ybar <- sqrt(ybar * (1 - ybar))
+se_ybar <- sigma_ybar / sqrt(n)
+
+ybar + ( qnorm(0.025) * se_ybar ) #left bound of CI
+ybar - ( qnorm (0.025) * se_ybar ) #right bound of CI
+
+#Thus, 95%CI = (0.06152508, 0.09119628)
+
+```
+
+#--------------------------------------------------------------------------------------------
+
+#7F
+
+```{r}
+#CI = diff +/ z(alpha / 2) * SE(diff)
+#Let X represent binomial distribution of each individual employed men, then proportion of employed men are Xbar. 
+
+employed <- sum(observed[1,])
+xbar <- employed / n
+
+diff <- xbar - ybar
+
+px <- employed / sum(observed)
+py <- unemployed / sum(observed)
+
+diff_se <- sqrt( ( (px + py) - (px - py)^2 ) / n )
+
+diff + ( qnorm(0.025) * diff_se ) #left bound of CI
+diff - ( qnorm (0.025) * diff_se ) #right bound of CI
+
+#Thus, 95%CI = (0.784003, 0.8455664)
+
+```
+
+#--------------------------------------------------------------------------------------------
+
+#7H
+```{r}
+#goodness of fit test
+#H0: Xi where i = 1, ..., 1000 follows bin(n, p_hat) where p_hat is mle estimator
+#H1: Xi where i = 1, ..., 1000 does not follow bin(n, p_hat)
+
+iidsample <- table(rbinom(1000, 5,0.4))
+
+p_hat <- mean(rbinom(1000, 5,0.4)) / 5
+
+chisq.test(as.vector(iidsample), p = dbinom(0:5, 5, p_hat)) #dbinom gives binomial probabilities of having 0 to 5 successes
+
+#result: x-squared = 4.1729, df = 6 - 1 - 1 (since we have estimated parameter of p_hat) = 4, p-value = 0.5248
+
+#conclusion: we fail to reject the null (p-value of 0.5248 > 0.05), meaning that it is likely that Xi follow binomial distribution with parameters n = 1000, p = p_hat
+
+```
+
+#--------------------------------------------------------------------------------------------
+
+#7I
+
+```{r}
+
+x <- c()
+y <- c()
+for (i in 1:2000) {
+  observed2 <- rbinom(1000, 5, 0.4)
+  obs_vector <- as.vector(table(observed2))
+  p_hat2 <- mean(observed2) / 5 #mle estimator p_hat for each observed sample
+  expected2 <- dbinom(0:5, 5, p_hat2) * 1000
+  x[i] <- 2 * sum(obs_vector * log(obs_vector / expected2))
+  y[i] <- sum( (obs_vector - expected2) ^ 2 / expected2 )
+  
+}
+
+#empirical histograms of X with chi-squared curve over histogram
+ggplot(as.data.frame(x), aes(x = x)) + geom_histogram(binwidth = 1, aes(y = ..density..)) + stat_function(fun = dchisq, args = list(df = 4), color = 'red') + labs(title = 'Empirical Histogram of X with Chi-Squared Curve')
+
+#empirical histograms of Y with chi-squared curve over histogram
+ggplot(as.data.frame(y), aes(x = y)) + geom_histogram(binwidth = 1, aes(y = ..density..)) + stat_function(fun = dchisq, args = list(df = 4), color = 'red') + labs(title = 'Empirical Histogram of Y with Chi-Squared Curve')
+
+# My pictures agree with the theory indicated on pages 341-343 because both histograms look very similar and have very similar distribution to chi-square curve with degrees of freedom of 4. 
+```
